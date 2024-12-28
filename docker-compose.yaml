@@ -1,0 +1,23 @@
+﻿services:
+  keeptabs:
+    build:
+      context: .
+    restart: always
+    ports:
+      - "7070:8080"
+    networks:
+      - keeptabs-network
+  database:
+    image: mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    networks:
+      - keeptabs-network
+    volumes:
+      - mongo_data:/data/db
+
+networks:
+  keeptabs-network:
+volumes:
+  mongo_data:
