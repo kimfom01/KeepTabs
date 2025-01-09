@@ -6,6 +6,8 @@ using KeepTabs.Requests;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Host.ConfigureSerilog();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.ConfigureSwagger();
 builder.Services.ConfigureHangfire();
