@@ -6,7 +6,7 @@ public class MongoDbProvider
 {
     public MongoDbProvider(IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("MongoConnection");
+        var connectionString = configuration.GetConnectionString("MongoMainConnection");
 
         var mongoUrl = MongoUrl.Create(connectionString);
         var mongoClient = new MongoClient(mongoUrl);

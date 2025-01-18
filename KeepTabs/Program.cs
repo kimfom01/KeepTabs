@@ -26,6 +26,6 @@ app.MapGet("/", () => Results.Ok("Hello world"))
     .WithDescription("""Returns a "Hello world" message""")
     .WithTags("KeepTabs");
 
-app.MapMonitorEndpoints();
+app.MapTrackingEndpoints();
 
 await app.RunAsync();

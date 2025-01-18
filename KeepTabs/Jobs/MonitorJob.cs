@@ -13,7 +13,7 @@ public class MonitorJob
         _httpClientFactory = httpClientFactory;
     }
     
-    public async Task InitiateMonitoring(MonitorRequest request)
+    public async Task InitiateMonitoring(TrackingRequest request)
     {
         _logger.LogInformation("Logging Request {@Request}", request);
 

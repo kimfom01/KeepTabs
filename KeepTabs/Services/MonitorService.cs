@@ -7,7 +7,7 @@ namespace KeepTabs.Services;
 
 public class MonitorService
 {
-    public MonitorResponse StartMonitoring(MonitorRequest request)
+    public MonitorResponse StartMonitoring(TrackingRequest request)
     {
         var jobId = CreateJobId(request.Title);
 
