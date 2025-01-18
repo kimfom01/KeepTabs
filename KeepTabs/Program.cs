@@ -13,6 +13,7 @@ builder.Services.ConfigureApiVersioning();
 builder.Services.ConfigureForwardedHeadersOptions();
 builder.Services.AddTransient<MonitorService>();
 builder.Services.AddHttpClient();
+builder.Services.AddSingleton<MongoDbProvider>();
 
 var app = builder.Build();
 
