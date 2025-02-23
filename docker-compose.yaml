@@ -2,14 +2,14 @@
   keeptabs:
     build:
       context: .
-    restart: always
+    restart: unless-stopped
     ports:
       - "7070:8080"
     networks:
       - keeptabs-network
   database:
     image: mongo
-    restart: always
+    restart: unless-stopped
     ports:
       - "27017:27017"
     networks:

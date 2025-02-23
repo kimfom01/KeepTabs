@@ -4,6 +4,9 @@ using KeepTabs.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddServiceDefaults();
+builder.AddMongoDBClient("MainDb");
+
 builder.Host.ConfigureSerilog();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -27,5 +30,7 @@ app.MapGet("/", () => Results.Ok("Hello world"))
     .WithTags("KeepTabs");
 
 app.MapTrackingEndpoints();
+
+app.MapDefaultEndpoints();
 
 await app.RunAsync();
