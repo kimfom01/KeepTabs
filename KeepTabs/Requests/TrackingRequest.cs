@@ -17,3 +17,10 @@ public class TrackingRequest
     /// <example>5</example>
     public int Interval { get; init; }
 }
+
+public record TrackingJob(
+    string JobId,
+    string Url,
+    string Title,
+    int Interval
+);

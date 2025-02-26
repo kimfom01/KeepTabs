@@ -13,7 +13,9 @@ public class MonitorService
 
         var cronExpression = ConvertToCronExpression(request.Interval);
 
-        RecurringJob.AddOrUpdate<MonitorJob>(jobId, x => x.InitiateMonitoring(request), cronExpression);
+        var job = new TrackingJob(jobId, request.Url, request.Title, request.Interval);
+
+        RecurringJob.AddOrUpdate<MonitorJob>(jobId, x => x.RunMonitoring(job), cronExpression);
 
         return new MonitorResponse(jobId);
     }

@@ -9,7 +9,7 @@ namespace KeepTabs.EndPoints;
 public static class MonitorEndpoints
 {
     private const string TrackJobStatus = nameof(TrackJobStatus);
-    
+
     public static void MapTrackingEndpoints(this WebApplication app)
     {
         var apiVersionSet = app.NewApiVersionSet()
@@ -28,8 +28,7 @@ public static class MonitorEndpoints
     private static IEndpointRouteBuilder MapStartTracking(this IEndpointRouteBuilder group)
     {
         group.MapPost("start",
-                async (TrackingRequest request, MonitorService monitorService, MongoDbProvider dbProvider,
-                    IConfiguration configuration) =>
+                async (TrackingRequest request, MonitorService monitorService, MongoDbProvider dbProvider) =>
                 {
                     var monitorResponse = monitorService.StartMonitoring(request);
 
@@ -45,10 +44,7 @@ public static class MonitorEndpoints
                         }
                     };
 
-                    var collection = dbProvider.MongoDatabase
-                        .GetCollection<JobTracking>(configuration.GetConnectionString("MongoCollection"));
-
-                    await collection.InsertOneAsync(jobTracking);
+                    await dbProvider.Collection.InsertOneAsync(jobTracking);
 
                     return Results.AcceptedAtRoute(TrackJobStatus, new { jobId = monitorResponse.JobId }, jobTracking);
                 })
@@ -60,23 +56,20 @@ public static class MonitorEndpoints
 
     private static IEndpointRouteBuilder MapCancelTracking(this IEndpointRouteBuilder group)
     {
-        group.MapPut("{jobId}/cancel", async (string jobId, MonitorService monitorService, MongoDbProvider dbProvider,
-                IConfiguration configuration) =>
-            {
-                monitorService.CancelMonitoring(jobId);
+        group.MapPut("{jobId}/cancel",
+                async (string jobId, MonitorService monitorService, MongoDbProvider dbProvider) =>
+                {
+                    monitorService.CancelMonitoring(jobId);
 
-                var collection = dbProvider.MongoDatabase
-                    .GetCollection<JobTracking>(configuration.GetConnectionString("MongoCollection"));
+                    var jobTracking = await dbProvider.Collection.Find(x => x.Id == jobId).FirstOrDefaultAsync();
 
-                var jobTracking = await collection.Find(x => x.Id == jobId).FirstOrDefaultAsync();
+                    jobTracking.ResponseStatus.RunningState = RunningState.Down;
+                    jobTracking.ResponseStatus.RunningStateName = nameof(RunningState.Down);
 
-                jobTracking.ResponseStatus.RunningState = RunningState.StoppedState;
-                jobTracking.ResponseStatus.RunningStateName = nameof(RunningState.StoppedState);
+                    await dbProvider.Collection.ReplaceOneAsync(x => x.Id == jobId, jobTracking);
 
-                await collection.ReplaceOneAsync(x => x.Id == jobId, jobTracking);
-
-                return Results.Ok("Success");
-            })
+                    return Results.Ok("Success");
+                })
             .WithSummary("Cancel")
             .WithDescription("Endpoint to cancel an existing monitoring job.");
 
@@ -86,13 +79,9 @@ public static class MonitorEndpoints
     private static IEndpointRouteBuilder MapCheckTrackingStatus(this IEndpointRouteBuilder group)
     {
         group.MapGet("{jobId}/status",
-                async (string jobId, MongoDbProvider mongoDbProvider, IConfiguration configuration) =>
+                async (string jobId, MongoDbProvider dbProvider) =>
                 {
-                    var collection =
-                        mongoDbProvider.MongoDatabase.GetCollection<JobTracking>(
-                            configuration.GetConnectionString("MongoCollection"));
-
-                    var jobTracking = await collection.Find(x => x.Id == jobId).FirstOrDefaultAsync();
+                    var jobTracking = await dbProvider.Collection.Find(x => x.Id == jobId).FirstOrDefaultAsync();
 
                     if (jobTracking is null)
                     {

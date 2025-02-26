@@ -26,15 +26,15 @@ public class ResponseStatus
 
     [BsonElement("status_code")] public int StatusCode { get; set; }
 
-    [BsonElement("response_latency")] public int ResponseLatency { get; set; }
+    [BsonElement("response_latency")] public double ResponseLatency { get; set; }
 
     [BsonElement("status_message")] public string? StatusMessage { get; set; }
-    [BsonElement("running_state")] public RunningState RunningState { get; set; } = RunningState.StartedState;
+    [BsonElement("running_state")] public RunningState RunningState { get; set; } = RunningState.Up;
     [BsonElement("running_state_name")] public string RunningStateName { get; set; } = nameof(RunningState);
 }
 
 public enum RunningState
 {
-    StoppedState = 10,
-    StartedState = 50,
+    Down = 10,
+    Up = 50,
 }
