@@ -26,7 +26,7 @@ public class MonitorService
     private string ConvertToCronExpression(int interval)
     {
         string cronExpression;
-        if (interval is <= 0 or >= 60)
+        if (interval is <= 1 or >= 60)
         {
             cronExpression = Cron.Minutely();
         }
