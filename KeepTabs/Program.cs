@@ -5,7 +5,8 @@ using KeepTabs.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
-builder.AddMongoDBClient("DefaultDatabase");
+builder.AddMongoDBClient("MongoMain");
+builder.AddMongoDBClient("MongoHangfire");
 
 builder.Host.ConfigureSerilog();
 

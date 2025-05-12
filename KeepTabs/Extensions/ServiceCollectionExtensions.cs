@@ -37,7 +37,7 @@ public static class ServiceCollectionExtensions
             hangfireConfig.SetDataCompatibilityLevel(CompatibilityLevel.Version_180);
             hangfireConfig.UseSimpleAssemblyNameTypeSerializer();
             hangfireConfig.UseRecommendedSerializerSettings();
-            hangfireConfig.UseMongoStorage(configuration.GetConnectionString("DefaultDatabase"),
+            hangfireConfig.UseMongoStorage(configuration.GetConnectionString("MongoHangfire"),
                 new MongoStorageOptions
                 {
                     MigrationOptions = new MongoMigrationOptions

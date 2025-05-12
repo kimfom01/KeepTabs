@@ -2,14 +2,22 @@ using Projects;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var mongoDb = builder.AddMongoDB("MongoDb")
+var mongoMain = builder.AddMongoDB("MongoMainDb")
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume()
     .WithMongoExpress()
-    .AddDatabase("DefaultDatabase");
+    .AddDatabase("MongoMain");
+
+var mongoHangfire = builder.AddMongoDB("MongoHangfireDb")
+    .WithLifetime(ContainerLifetime.Persistent)
+    .WithDataVolume()
+    .WithMongoExpress()
+    .AddDatabase("MongoHangfire");
 
 builder.AddProject<KeepTabs>("KeepTabs")
-    .WithReference(mongoDb)
-    .WaitFor(mongoDb);
+    .WithReference(mongoMain)
+    .WithReference(mongoHangfire)
+    .WaitFor(mongoMain)
+    .WaitFor(mongoHangfire);
 
 builder.Build().Run();
