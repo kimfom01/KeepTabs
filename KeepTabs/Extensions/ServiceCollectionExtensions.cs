@@ -46,7 +46,7 @@ public static class ServiceCollectionExtensions
                         BackupStrategy = new CollectionMongoBackupStrategy()
                     },
                     CheckQueuedJobsStrategy = CheckQueuedJobsStrategy.TailNotificationsCollection,
-                    CheckConnection = false,
+                    CheckConnection = true,
                 });
         });
     }
