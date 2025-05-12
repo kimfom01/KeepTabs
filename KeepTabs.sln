@@ -10,6 +10,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 		docker-compose.yaml = docker-compose.yaml
 		Dockerfile = Dockerfile
+		.dockerignore = .dockerignore
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Aspire", "Aspire", "{B1A4FC38-6B25-4CF1-B4B8-A52AB82EC004}"
