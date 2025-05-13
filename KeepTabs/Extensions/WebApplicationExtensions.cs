@@ -13,20 +13,23 @@ public static class WebApplicationExtensions
         app.UseHangfireDashboard(options: new DashboardOptions
         {
             DashboardTitle = "KeepTabs Hangfire Dashboard",
-            DisplayStorageConnectionString = false,
-            Authorization =
-            [
-                new BasicAuthAuthorizationFilter(new BasicAuthAuthorizationFilterOptions
-                {
-                    RequireSsl = !app.Environment.IsDevelopment(),
-                    SslRedirect = !app.Environment.IsDevelopment(),
-                    Users = [new BasicAuthAuthorizationUser
+            DisplayStorageConnectionString = app.Environment.IsDevelopment(),
+            Authorization = app.Environment.IsDevelopment()
+                ? []
+                :
+                [
+                    new BasicAuthAuthorizationFilter(new BasicAuthAuthorizationFilterOptions
                     {
-                        Login = "keeptabs",
-                        PasswordClear = "keeptabs"
-                    }]
-                })
-            ],
+                        Users =
+                        [
+                            new BasicAuthAuthorizationUser
+                            {
+                                Login = "keeptabs",
+                                PasswordClear = "keeptabs"
+                            }
+                        ]
+                    })
+                ],
         });
     }
 
