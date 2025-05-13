@@ -1,4 +1,5 @@
 using Hangfire;
+using Hangfire.Dashboard.BasicAuthorization;
 using KeepTabs.Database;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
@@ -12,7 +13,20 @@ public static class WebApplicationExtensions
         app.UseHangfireDashboard(options: new DashboardOptions
         {
             DashboardTitle = "KeepTabs Hangfire Dashboard",
-            DisplayStorageConnectionString = false
+            DisplayStorageConnectionString = false,
+            Authorization =
+            [
+                new BasicAuthAuthorizationFilter(new BasicAuthAuthorizationFilterOptions
+                {
+                    RequireSsl = !app.Environment.IsDevelopment(),
+                    SslRedirect = !app.Environment.IsDevelopment(),
+                    Users = [new BasicAuthAuthorizationUser
+                    {
+                        Login = "keeptabs",
+                        PasswordClear = "keeptabs"
+                    }]
+                })
+            ],
         });
     }
 

@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using KeepTabs.Contracts.Requests;
 using KeepTabs.Database;
 using KeepTabs.Entities;
 using Microsoft.EntityFrameworkCore;
