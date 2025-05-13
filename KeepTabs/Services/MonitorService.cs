@@ -1,13 +1,14 @@
 using Hangfire;
+using KeepTabs.Contracts.Requests;
+using KeepTabs.Contracts.Responses;
+using KeepTabs.Entities;
 using KeepTabs.Jobs;
-using KeepTabs.Requests;
-using KeepTabs.Responses;
 
 namespace KeepTabs.Services;
 
 public class MonitorService
 {
-    public MonitorResponse StartMonitoring(TrackingRequest request)
+    public MonitorResponse StartMonitoring(TrackingRequest request, CancellationToken cancellationToken)
     {
         var jobId = CreateJobId(request.Title);
 
@@ -15,7 +16,7 @@ public class MonitorService
 
         var job = new TrackingJob(jobId, request.Url, request.Title, request.Interval);
 
-        RecurringJob.AddOrUpdate<MonitorJob>(jobId, x => x.RunMonitoring(job), cronExpression);
+        RecurringJob.AddOrUpdate<MonitorJob>(jobId, x => x.RunMonitoring(job, cancellationToken), cronExpression);
 
         return new MonitorResponse(jobId);
     }
@@ -24,20 +25,14 @@ public class MonitorService
     {
         RecurringJob.RemoveIfExists(jobId);
     }
-    
+
     private string ConvertToCronExpression(int interval)
     {
-        string cronExpression;
-        if (interval is <= 1 or >= 60)
+        return interval switch
         {
-            cronExpression = Cron.Minutely();
-        }
-        else
-        {
-            cronExpression = $"*/{interval} * * * *";
-        }
-
-        return cronExpression;
+            <= 1 or >= 60 => Cron.Minutely(),
+            _ => $"*/{interval} * * * *"
+        };
     }
 
     private string CleanUpTitle(string title)
@@ -48,7 +43,7 @@ public class MonitorService
     private string CreateJobId(string title)
     {
         var cleanedTitle = CleanUpTitle(title);
-        
+
         return $"{cleanedTitle}_{Guid.NewGuid()}";
     }
 }

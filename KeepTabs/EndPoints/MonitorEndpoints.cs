@@ -1,8 +1,9 @@
 using Asp.Versioning;
+using KeepTabs.Contracts.Requests;
+using KeepTabs.Database;
 using KeepTabs.Entities;
-using KeepTabs.Requests;
 using KeepTabs.Services;
-using MongoDB.Driver;
+using Microsoft.EntityFrameworkCore;
 
 namespace KeepTabs.EndPoints;
 
@@ -28,9 +29,10 @@ public static class MonitorEndpoints
     private static IEndpointRouteBuilder MapStartTracking(this IEndpointRouteBuilder group)
     {
         group.MapPost("start",
-                async (TrackingRequest request, MonitorService monitorService, MongoDbProvider dbProvider) =>
+                async (TrackingRequest request, MonitorService monitorService, KeepTabsDbContext context,
+                    CancellationToken cancellationToken) =>
                 {
-                    var monitorResponse = monitorService.StartMonitoring(request);
+                    var monitorResponse = monitorService.StartMonitoring(request, cancellationToken);
 
                     var jobTracking = new JobTracking
                     {
@@ -44,7 +46,8 @@ public static class MonitorEndpoints
                         }
                     };
 
-                    await dbProvider.Collection.InsertOneAsync(jobTracking);
+                    await context.JobTrackings.AddAsync(jobTracking, cancellationToken);
+                    await context.SaveChangesAsync(cancellationToken);
 
                     return Results.AcceptedAtRoute(TrackJobStatus, new { jobId = monitorResponse.JobId }, jobTracking);
                 })
@@ -57,18 +60,26 @@ public static class MonitorEndpoints
     private static IEndpointRouteBuilder MapCancelTracking(this IEndpointRouteBuilder group)
     {
         group.MapPut("{jobId}/cancel",
-                async (string jobId, MonitorService monitorService, MongoDbProvider dbProvider) =>
+                async (string jobId, MonitorService monitorService, KeepTabsDbContext context,
+                    CancellationToken cancellationToken) =>
                 {
                     monitorService.CancelMonitoring(jobId);
 
-                    var jobTracking = await dbProvider.Collection.Find(x => x.Id == jobId).FirstOrDefaultAsync();
+                    var jobTracking = await context.JobTrackings
+                        .Include(x => x.ResponseStatus)
+                        .FirstOrDefaultAsync(x => x.Id == jobId, cancellationToken: cancellationToken);
+
+                    if (jobTracking is null)
+                    {
+                        return Results.NotFound("Job ID is invalid");
+                    }
 
                     jobTracking.ResponseStatus.RunningState = RunningState.Down;
                     jobTracking.ResponseStatus.RunningStateName = nameof(RunningState.Down);
 
-                    await dbProvider.Collection.ReplaceOneAsync(x => x.Id == jobId, jobTracking);
+                    await context.SaveChangesAsync(cancellationToken);
 
-                    return Results.Ok("Success");
+                    return Results.Ok($"Successfully cancelled job with ID {jobId}");
                 })
             .WithSummary("Cancel")
             .WithDescription("Endpoint to cancel an existing monitoring job.");
@@ -79,13 +90,17 @@ public static class MonitorEndpoints
     private static IEndpointRouteBuilder MapCheckTrackingStatus(this IEndpointRouteBuilder group)
     {
         group.MapGet("{jobId}/status",
-                async (string jobId, MongoDbProvider dbProvider) =>
+                async (string jobId, KeepTabsDbContext context,
+                    CancellationToken cancellationToken) =>
                 {
-                    var jobTracking = await dbProvider.Collection.Find(x => x.Id == jobId).FirstOrDefaultAsync();
+                    var jobTracking = await context.JobTrackings
+                        .Include(x => x.ResponseStatus)
+                        .FirstOrDefaultAsync(x => x.Id == jobId,
+                            cancellationToken: cancellationToken);
 
                     if (jobTracking is null)
                     {
-                        return Results.NotFound();
+                        return Results.NotFound("Job ID is invalid");
                     }
 
                     return Results.Ok(jobTracking);

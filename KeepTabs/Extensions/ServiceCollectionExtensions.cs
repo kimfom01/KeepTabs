@@ -1,9 +1,7 @@
 using System.Reflection;
 using Asp.Versioning;
 using Hangfire;
-using Hangfire.Mongo;
-using Hangfire.Mongo.Migration.Strategies;
-using Hangfire.Mongo.Migration.Strategies.Backup;
+using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.OpenApi.Models;
 
@@ -33,21 +31,8 @@ public static class ServiceCollectionExtensions
         services.AddHangfire((provider, hangfireConfig) =>
         {
             var configuration = provider.GetRequiredService<IConfiguration>();
-
-            hangfireConfig.SetDataCompatibilityLevel(CompatibilityLevel.Version_180);
-            hangfireConfig.UseSimpleAssemblyNameTypeSerializer();
-            hangfireConfig.UseRecommendedSerializerSettings();
-            hangfireConfig.UseMongoStorage(configuration.GetConnectionString("MongoHangfire"),
-                new MongoStorageOptions
-                {
-                    MigrationOptions = new MongoMigrationOptions
-                    {
-                        MigrationStrategy = new MigrateMongoMigrationStrategy(),
-                        BackupStrategy = new CollectionMongoBackupStrategy()
-                    },
-                    CheckQueuedJobsStrategy = CheckQueuedJobsStrategy.TailNotificationsCollection,
-                    CheckConnection = true,
-                });
+            hangfireConfig.UsePostgreSqlStorage(options =>
+                options.UseNpgsqlConnection(configuration.GetConnectionString("keeptabsdb")));
         });
     }
 
@@ -66,7 +51,7 @@ public static class ServiceCollectionExtensions
                 options.SubstituteApiVersionInUrl = true;
             });
     }
-    
+
     public static void ConfigureForwardedHeadersOptions(this IServiceCollection services)
     {
         services.Configure<ForwardedHeadersOptions>(opt =>

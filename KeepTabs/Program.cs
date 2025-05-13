@@ -1,12 +1,13 @@
+using KeepTabs.Database;
 using KeepTabs.EndPoints;
 using KeepTabs.Extensions;
 using KeepTabs.Services;
+using ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
-builder.AddMongoDBClient("MongoMain");
-builder.AddMongoDBClient("MongoHangfire");
+builder.AddNpgsqlDbContext<KeepTabsDbContext>("keeptabsdb");
 
 builder.Host.ConfigureSerilog();
 
@@ -17,9 +18,10 @@ builder.Services.ConfigureApiVersioning();
 builder.Services.ConfigureForwardedHeadersOptions();
 builder.Services.AddTransient<MonitorService>();
 builder.Services.AddHttpClient();
-builder.Services.AddSingleton<MongoDbProvider>();
 
 var app = builder.Build();
+
+app.ApplyMigrations();
 
 app.UseHttpsRedirection();
 app.SetupHangfireDashboard();

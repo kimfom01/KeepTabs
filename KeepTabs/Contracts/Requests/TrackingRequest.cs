@@ -1,4 +1,4 @@
-namespace KeepTabs.Requests;
+namespace KeepTabs.Contracts.Requests;
 
 /// <summary>
 /// This represents the payload used to initiate a tracking request
@@ -17,10 +17,3 @@ public class TrackingRequest
     /// <example>5</example>
     public int Interval { get; init; }
 }
-
-public record TrackingJob(
-    string JobId,
-    string Url,
-    string Title,
-    int Interval
-);

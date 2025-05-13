@@ -1,4 +1,6 @@
 using Hangfire;
+using KeepTabs.Database;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
 namespace KeepTabs.Extensions;
@@ -18,5 +20,16 @@ public static class WebApplicationExtensions
     {
         app.UseSwagger(options => { options.RouteTemplate = "openapi/{documentName}.json"; });
         app.MapScalarApiReference(options => { options.WithDefaultHttpClient(ScalarTarget.Shell, ScalarClient.Curl); });
+    }
+
+    public static void ApplyMigrations(this WebApplication app)
+    {
+        if (app.Environment.IsDevelopment())
+        {
+            var context = app.Services.CreateAsyncScope()
+                .ServiceProvider.GetRequiredService<KeepTabsDbContext>();
+
+            context.Database.Migrate();
+        }
     }
 }
