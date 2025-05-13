@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using KeepTabs.Database;
 using KeepTabs.EndPoints;
 using KeepTabs.Extensions;
@@ -11,6 +12,10 @@ builder.AddNpgsqlDbContext<KeepTabsDbContext>("keeptabsdb");
 
 builder.Host.ConfigureSerilog();
 
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.ConfigureSwagger();
 builder.Services.ConfigureHangfire();

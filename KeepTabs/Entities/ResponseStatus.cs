@@ -8,4 +8,7 @@ public class ResponseStatus
     public string? StatusMessage { get; set; }
     public RunningState RunningState { get; set; } = RunningState.Up;
     public string RunningStateName { get; set; } = nameof(RunningState);
+
+    public string JobTrackingId { get; set; }
+    public JobTracking? JobTracking { get; set; }
 }

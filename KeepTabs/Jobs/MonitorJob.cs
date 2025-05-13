@@ -23,7 +23,7 @@ public class MonitorJob
         _logger.LogInformation("Start Processing Job {@Request}", job);
 
         var jobTracking = await _context.JobTrackings
-            .Include(x => x.ResponseStatus)
+            .Include(x => x.ResponseStatuses)
             .SingleAsync(x => x.Id == job.JobId, cancellationToken: cancellationToken);
 
         try
@@ -38,19 +38,33 @@ public class MonitorJob
 
             response.EnsureSuccessStatusCode();
 
-            jobTracking.ResponseStatus.RunningState = RunningState.Up;
-            jobTracking.ResponseStatus.StatusMessage = response.ReasonPhrase;
-            jobTracking.ResponseStatus.ResponseLatency = elapsed.TotalMilliseconds;
-            jobTracking.ResponseStatus.StatusCode = (int)response.StatusCode;
+            var responseStatus = new ResponseStatus
+            {
+                Id = Guid.NewGuid(),
+                StatusCode = (int)response.StatusCode,
+                ResponseLatency = elapsed.TotalMilliseconds,
+                StatusMessage = response.ReasonPhrase,
+                RunningState = RunningState.Up,
+                JobTrackingId = jobTracking.Id,
+            };
+
+            await _context.ResponseStatuses.AddAsync(responseStatus, cancellationToken);
 
             await _context.SaveChangesAsync(cancellationToken);
         }
         catch (HttpRequestException ex)
         {
             _logger.LogError(ex, "Error Processing Job {@Exception}", ex);
-            jobTracking.ResponseStatus.RunningState = RunningState.Down;
-            jobTracking.ResponseStatus.StatusMessage = ex.Message;
-            jobTracking.ResponseStatus.StatusCode = (int)ex.StatusCode!;
+            var responseStatus = new ResponseStatus
+            {
+                Id = Guid.NewGuid(),
+                StatusCode = (int)ex.StatusCode!,
+                StatusMessage = ex.Message,
+                RunningState = RunningState.Down,
+                JobTrackingId = jobTracking.Id,
+            };
+
+            await _context.ResponseStatuses.AddAsync(responseStatus, cancellationToken);
 
             await _context.SaveChangesAsync(cancellationToken);
         }
