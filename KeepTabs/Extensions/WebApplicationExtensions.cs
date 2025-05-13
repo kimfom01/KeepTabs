@@ -20,6 +20,9 @@ public static class WebApplicationExtensions
                 [
                     new BasicAuthAuthorizationFilter(new BasicAuthAuthorizationFilterOptions
                     {
+                        RequireSsl = false,
+                        SslRedirect = false,
+                        LoginCaseSensitive = false,
                         Users =
                         [
                             new BasicAuthAuthorizationUser
