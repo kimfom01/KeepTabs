@@ -26,11 +26,6 @@ public class MonitorService
         RecurringJob.RemoveIfExists(jobId);
     }
 
-    public void CleanUpExpiredRecords(CancellationToken cancellationToken)
-    {
-        RecurringJob.AddOrUpdate<JobHistoryCleaner>("CleanUp", x => x.CleanUp(cancellationToken), Cron.Daily);
-    }
-
     private string ConvertToCronExpression(int interval)
     {
         return interval switch
