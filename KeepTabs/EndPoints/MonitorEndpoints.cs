@@ -24,7 +24,8 @@ public static class MonitorEndpoints
             .MapStartTracking()
             .MapCancelTracking()
             .MapCheckTrackingStatus()
-            .MapGetTrackingHistory();
+            .MapGetTrackingHistory()
+            .MapGetMonitoringEntries();
     }
 
     private static IEndpointRouteBuilder MapStartTracking(this IEndpointRouteBuilder group)
@@ -122,8 +123,24 @@ public static class MonitorEndpoints
 
                 return Results.Ok(responseStatuses);
             })
-            .WithSummary("Check Monitoring History")
+            .WithSummary("Check Tracking History")
             .WithDescription("Endpoint to check history of existing job");
+
+        return group;
+    }
+
+    private static IEndpointRouteBuilder MapGetMonitoringEntries(this IEndpointRouteBuilder group)
+    {
+        group.MapGet("/", async (KeepTabsDbContext context, CancellationToken cancellationToken) =>
+            {
+                var jobTrackings = await context.JobTrackings
+                    .AsNoTracking()
+                    .ToListAsync(cancellationToken);
+
+                return Results.Ok(jobTrackings);
+            })
+            .WithSummary("Check Monitoring History")
+            .WithDescription("Endpoint to get all monitoring entries");
 
         return group;
     }
