@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Hangfire;
 using KeepTabs.Database;
 using KeepTabs.EndPoints;
 using KeepTabs.Extensions;
@@ -40,5 +41,9 @@ app.MapGet("/", () => Results.Ok("Hello world"))
 app.MapTrackingEndpoints();
 
 app.MapDefaultEndpoints();
+
+var manager = app.Services.CreateAsyncScope()
+    .ServiceProvider.GetRequiredService<IRecurringJobManager>();
+manager.AddOrUpdate<MonitorService>("CleanUpExpiredRecords", x => x.CleanUpExpiredRecords(CancellationToken.None), Cron.Daily);
 
 await app.RunAsync();

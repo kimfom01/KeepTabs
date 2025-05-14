@@ -1,6 +1,6 @@
 namespace KeepTabs.Entities;
 
-public class ResponseStatus
+public class ResponseStatus : BaseEntity
 {
     public Guid Id { get; set; }
     public int? StatusCode { get; set; }
