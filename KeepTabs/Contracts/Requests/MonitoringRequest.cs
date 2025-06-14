@@ -1,15 +1,15 @@
 namespace KeepTabs.Contracts.Requests;
 
 /// <summary>
-/// This represents the payload used to initiate a tracking request
+/// This represents the payload used to initiate a monitoring request
 /// </summary>
-public class TrackingRequest
+public class MonitoringRequest
 {
     /// <summary>Full url endpoint e.g. https://google.com</summary>
     /// <example>https://google.com</example>
     public required string Url { get; init; }
 
-    /// <summary>Title of the resource to track</summary>
+    /// <summary>Title of the resource to monitor</summary>
     /// <example>Google Search</example>
     public required string Title { get; init; }
 

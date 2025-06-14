@@ -39,7 +39,7 @@ app.MapGet("/", () => Results.Ok("Hello world"))
     .WithDescription("""Returns a "Hello world" message""")
     .WithTags("KeepTabs");
 
-app.MapTrackingEndpoints();
+app.MapMonitorEndpoints();
 
 app.MapDefaultEndpoints();
 

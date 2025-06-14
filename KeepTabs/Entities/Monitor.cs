@@ -1,6 +1,6 @@
 namespace KeepTabs.Entities;
 
-public class JobTracking : BaseEntity
+public class Monitor : BaseEntity
 {
     public string Id { get; set; }
     public required string JobTitle { get; set; }

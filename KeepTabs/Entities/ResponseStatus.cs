@@ -9,6 +9,6 @@ public class ResponseStatus : BaseEntity
     public RunningState RunningState { get; set; } = RunningState.Up;
     public string RunningStateName { get; set; } = nameof(RunningState);
 
-    public string JobTrackingId { get; set; }
-    public JobTracking? JobTracking { get; set; }
+    public string MonitorId { get; set; }
+    public Monitor? Monitor { get; set; }
 }
