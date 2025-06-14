@@ -41,6 +41,12 @@ public static class WebApplicationExtensions
         app.UseSwagger(options => { options.RouteTemplate = "openapi/{documentName}.json"; });
         app.MapScalarApiReference(options => { options.WithDefaultHttpClient(ScalarTarget.Shell, ScalarClient.Curl); });
     }
+    
+    public static void SetupSwaggerDocs(this WebApplication app)
+    {
+        app.MapOpenApi();
+        app.UseSwaggerUi(options => { options.DocumentPath = "/openapi/v1.json"; });
+    }
 
     public static void ApplyMigrations(this WebApplication app)
     {

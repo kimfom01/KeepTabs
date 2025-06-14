@@ -18,6 +18,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 });
+builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.ConfigureSwagger();
 builder.Services.ConfigureHangfire();
@@ -33,6 +34,7 @@ app.ApplyMigrations();
 app.UseHttpsRedirection();
 app.SetupHangfireDashboard();
 app.SetupScalarDocs();
+app.SetupSwaggerDocs();
 
 app.MapGet("/", () => Results.Ok("Hello world"))
     .WithSummary("Greetings")
