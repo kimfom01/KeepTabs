@@ -4,14 +4,15 @@ using KeepTabs.Database;
 using KeepTabs.Entities;
 using KeepTabs.Services;
 using Microsoft.EntityFrameworkCore;
+using Monitor = KeepTabs.Entities.Monitor;
 
 namespace KeepTabs.EndPoints;
 
 public static class MonitorEndpoints
 {
-    private const string TrackJobStatus = nameof(TrackJobStatus);
+    private const string MonitoringJobStatus = nameof(MonitoringJobStatus);
 
-    public static void MapTrackingEndpoints(this WebApplication app)
+    public static void MapMonitorEndpoints(this WebApplication app)
     {
         var apiVersionSet = app.NewApiVersionSet()
             .HasApiVersion(new ApiVersion(1))
@@ -21,33 +22,33 @@ public static class MonitorEndpoints
         app.MapGroup("v{v:apiVersion}/monitor")
             .WithApiVersionSet(apiVersionSet)
             .WithTags("Monitoring")
-            .MapStartTracking()
-            .MapCancelTracking()
-            .MapCheckTrackingStatus()
-            .MapGetTrackingHistory()
+            .MapStartMonitoring()
+            .MapCancelMonitoring()
+            .MapCheckMonitoringStatus()
+            .MapGetMonitoringHistory()
             .MapGetMonitoringEntries();
     }
 
-    private static IEndpointRouteBuilder MapStartTracking(this IEndpointRouteBuilder group)
+    private static IEndpointRouteBuilder MapStartMonitoring(this IEndpointRouteBuilder group)
     {
-        group.MapPost("start", async (TrackingRequest request, MonitorService monitorService, KeepTabsDbContext context,
+        group.MapPost("start", async (MonitoringRequest request, MonitorService monitorService, KeepTabsDbContext context,
                 CancellationToken cancellationToken) =>
             {
                 var monitorResponse = monitorService.StartMonitoring(request, cancellationToken);
 
-                var jobTracking = new JobTracking
+                var monitor = new Monitor
                 {
-                    Id = monitorResponse.JobId,
+                    Id = monitorResponse.MonitorId,
                     JobTitle = request.Title,
                     JobUrl = request.Url,
                     RequestInterval = request.Interval,
                     ResponseStatuses = []
                 };
 
-                await context.JobTrackings.AddAsync(jobTracking, cancellationToken);
+                await context.Monitors.AddAsync(monitor, cancellationToken);
                 await context.SaveChangesAsync(cancellationToken);
 
-                return Results.AcceptedAtRoute(TrackJobStatus, new { jobId = monitorResponse.JobId }, jobTracking);
+                return Results.AcceptedAtRoute(MonitoringJobStatus, new { monitorId = monitorResponse.MonitorId }, monitor);
             })
             .WithSummary("Start Monitoring")
             .WithDescription("Endpoint to initiate a monitoring job");
@@ -55,33 +56,33 @@ public static class MonitorEndpoints
         return group;
     }
 
-    private static IEndpointRouteBuilder MapCancelTracking(this IEndpointRouteBuilder group)
+    private static IEndpointRouteBuilder MapCancelMonitoring(this IEndpointRouteBuilder group)
     {
-        group.MapPut("{jobId}/cancel", async (string jobId, MonitorService monitorService, KeepTabsDbContext context,
+        group.MapPut("{monitorId}/cancel", async (string monitorId, MonitorService monitorService, KeepTabsDbContext context,
                 CancellationToken cancellationToken) =>
             {
-                monitorService.CancelMonitoring(jobId);
+                monitorService.CancelMonitoring(monitorId);
 
-                var jobTracking = await context.JobTrackings
+                var monitor = await context.Monitors
                     .Include(x => x.ResponseStatuses)
-                    .FirstOrDefaultAsync(x => x.Id == jobId, cancellationToken: cancellationToken);
+                    .FirstOrDefaultAsync(x => x.Id == monitorId, cancellationToken: cancellationToken);
 
-                if (jobTracking is null)
+                if (monitor is null)
                 {
-                    return Results.NotFound("Job ID is invalid");
+                    return Results.NotFound("Job ID Is Invalid. No Monitor Found!");
                 }
 
                 var responseStatus = new ResponseStatus
                 {
                     Id = Guid.NewGuid(),
                     RunningState = RunningState.Down,
-                    JobTrackingId = jobTracking.Id,
+                    MonitorId = monitor.Id,
                 };
 
                 await context.ResponseStatuses.AddAsync(responseStatus, cancellationToken);
                 await context.SaveChangesAsync(cancellationToken);
 
-                return Results.Ok($"Successfully cancelled job with ID {jobId}");
+                return Results.Ok($"Successfully cancelled job with ID {monitorId}");
             })
             .WithSummary("Cancel Monitoring")
             .WithDescription("Endpoint to cancel an existing monitoring job");
@@ -89,41 +90,41 @@ public static class MonitorEndpoints
         return group;
     }
 
-    private static IEndpointRouteBuilder MapCheckTrackingStatus(this IEndpointRouteBuilder group)
+    private static IEndpointRouteBuilder MapCheckMonitoringStatus(this IEndpointRouteBuilder group)
     {
-        group.MapGet("{jobId}/status", async (string jobId, KeepTabsDbContext context,
+        group.MapGet("{monitorId}/status", async (string monitorId, KeepTabsDbContext context,
                 CancellationToken cancellationToken) =>
             {
-                var jobTracking = await context.JobTrackings
+                var monitor = await context.Monitors
                     .Include(x => x.ResponseStatuses)
-                    .FirstOrDefaultAsync(x => x.Id == jobId, cancellationToken);
+                    .FirstOrDefaultAsync(x => x.Id == monitorId, cancellationToken);
 
-                if (jobTracking is null)
+                if (monitor is null)
                 {
-                    return Results.NotFound("Job ID is invalid");
+                    return Results.NotFound("Job ID Is Invalid. No Monitor Found!");
                 }
 
-                return Results.Ok(jobTracking);
+                return Results.Ok(monitor);
             })
-            .WithName(TrackJobStatus)
+            .WithName(MonitoringJobStatus)
             .WithSummary("Check Monitoring Status")
             .WithDescription("Endpoint to check status of existing job");
 
         return group;
     }
 
-    private static IEndpointRouteBuilder MapGetTrackingHistory(this IEndpointRouteBuilder group)
+    private static IEndpointRouteBuilder MapGetMonitoringHistory(this IEndpointRouteBuilder group)
     {
-        group.MapGet("{jobId}/history", async (string jobId, KeepTabsDbContext context,
+        group.MapGet("{monitorId}/history", async (string monitorId, KeepTabsDbContext context,
                 CancellationToken cancellationToken) =>
             {
                 var responseStatuses = await context.ResponseStatuses
-                    .Where(x => x.JobTrackingId == jobId)
+                    .Where(x => x.MonitorId == monitorId)
                     .ToListAsync(cancellationToken);
 
                 return Results.Ok(responseStatuses);
             })
-            .WithSummary("Check Tracking History")
+            .WithSummary("Check Monitoring History")
             .WithDescription("Endpoint to check history of existing job");
 
         return group;
@@ -133,13 +134,13 @@ public static class MonitorEndpoints
     {
         group.MapGet("/", async (KeepTabsDbContext context, CancellationToken cancellationToken) =>
             {
-                var jobTrackings = await context.JobTrackings
+                var monitors = await context.Monitors
                     .AsNoTracking()
                     .ToListAsync(cancellationToken);
 
-                return Results.Ok(jobTrackings);
+                return Results.Ok(monitors);
             })
-            .WithSummary("Check Monitoring History")
+            .WithSummary("Get Monitoring Entries")
             .WithDescription("Endpoint to get all monitoring entries");
 
         return group;

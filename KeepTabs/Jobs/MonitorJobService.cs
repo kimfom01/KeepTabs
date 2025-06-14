@@ -5,26 +5,26 @@ using Microsoft.EntityFrameworkCore;
 
 namespace KeepTabs.Jobs;
 
-public class MonitorJob
+public class MonitorJobService
 {
-    private readonly ILogger<MonitorJob> _logger;
+    private readonly ILogger<MonitorJobService> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly KeepTabsDbContext _context;
 
-    public MonitorJob(ILogger<MonitorJob> logger, IHttpClientFactory httpClientFactory, KeepTabsDbContext context)
+    public MonitorJobService(ILogger<MonitorJobService> logger, IHttpClientFactory httpClientFactory, KeepTabsDbContext context)
     {
         _logger = logger;
         _httpClientFactory = httpClientFactory;
         _context = context;
     }
 
-    public async Task RunMonitoring(TrackingJob job, CancellationToken cancellationToken)
+    public async Task RunMonitoring(MonitorJob monitorJob, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Start Processing Job {@Request}", job);
+        _logger.LogInformation("Start Processing Job {@Request}", monitorJob);
 
-        var jobTracking = await _context.JobTrackings
+        var monitor = await _context.Monitors
             .Include(x => x.ResponseStatuses)
-            .SingleAsync(x => x.Id == job.JobId, cancellationToken: cancellationToken);
+            .SingleAsync(x => x.Id == monitorJob.MonitorId, cancellationToken: cancellationToken);
 
         try
         {
@@ -32,7 +32,7 @@ public class MonitorJob
 
             var timestamp = Stopwatch.GetTimestamp();
 
-            var response = await httpClient.GetAsync(job.Url, cancellationToken);
+            var response = await httpClient.GetAsync(monitorJob.Url, cancellationToken);
 
             var elapsed = Stopwatch.GetElapsedTime(timestamp);
 
@@ -45,7 +45,7 @@ public class MonitorJob
                 ResponseLatency = elapsed.TotalMilliseconds,
                 StatusMessage = response.ReasonPhrase,
                 RunningState = RunningState.Up,
-                JobTrackingId = jobTracking.Id,
+                MonitorId = monitor.Id,
             };
 
             await _context.ResponseStatuses.AddAsync(responseStatus, cancellationToken);
@@ -61,7 +61,7 @@ public class MonitorJob
                 StatusCode = (int)ex.StatusCode!,
                 StatusMessage = ex.Message,
                 RunningState = RunningState.Down,
-                JobTrackingId = jobTracking.Id,
+                MonitorId = monitor.Id,
             };
 
             await _context.ResponseStatuses.AddAsync(responseStatus, cancellationToken);
@@ -69,6 +69,6 @@ public class MonitorJob
             await _context.SaveChangesAsync(cancellationToken);
         }
 
-        _logger.LogInformation("Finished Processing Job {@Request}", job);
+        _logger.LogInformation("Finished Processing Job {@Request}", monitorJob);
     }
 }

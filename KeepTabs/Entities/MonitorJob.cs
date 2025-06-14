@@ -1,7 +1,7 @@
 namespace KeepTabs.Entities;
 
-public record TrackingJob(
-    string JobId,
+public record MonitorJob(
+    string MonitorId,
     string Url,
     string Title,
     int Interval
