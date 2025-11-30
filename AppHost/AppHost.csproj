@@ -9,6 +9,7 @@
         <Nullable>enable</Nullable>
         <IsAspireHost>true</IsAspireHost>
         <UserSecretsId>31e58c4c-5c73-4cd9-8242-527aac6cbecb</UserSecretsId>
+        <LangVersion>default</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
@@ -17,6 +18,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\KeepTabs.Worker\KeepTabs.Worker.csproj" />
       <ProjectReference Include="..\KeepTabs\KeepTabs.csproj" />
     </ItemGroup>
 

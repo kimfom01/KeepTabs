@@ -2,7 +2,10 @@ using System.Reflection;
 using Asp.Versioning;
 using Hangfire;
 using Hangfire.PostgreSql;
+using KeepTabs.Database;
+using KeepTabs.Entities;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.OpenApi;
 
 namespace KeepTabs.Extensions;
@@ -58,5 +61,16 @@ public static class ServiceCollectionExtensions
         {
             opt.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
         });
+    }
+
+    public static void ConfigureIdentity(this IServiceCollection services)
+    {
+        services.AddIdentityApiEndpoints<User>(options =>
+            {
+                options.SignIn.RequireConfirmedAccount = false;
+                options.User.RequireUniqueEmail = true;
+            })
+            .AddRoles<IdentityRole>()
+            .AddEntityFrameworkStores<ApplicationDbContext>();
     }
 }
