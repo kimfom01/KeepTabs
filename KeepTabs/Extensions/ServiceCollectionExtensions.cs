@@ -3,7 +3,7 @@ using Asp.Versioning;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 namespace KeepTabs.Extensions;
 
