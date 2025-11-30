@@ -11,6 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		docker-compose.yaml = docker-compose.yaml
 		Dockerfile = Dockerfile
 		.dockerignore = .dockerignore
+		Dockerfile.Worker = Dockerfile.Worker
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Aspire", "Aspire", "{B1A4FC38-6B25-4CF1-B4B8-A52AB82EC004}"
@@ -18,6 +19,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppHost", "AppHost\AppHost.csproj", "{3715C4CF-AC71-41C5-A7ED-13B83884C35D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceDefaults", "ServiceDefaults\ServiceDefaults.csproj", "{157D8F11-BB39-4B14-A4B5-189CD5656212}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeepTabs.Worker", "KeepTabs.Worker\KeepTabs.Worker.csproj", "{84995095-D57C-4E5D-ACCE-5856830FB217}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -40,6 +43,10 @@ Global
 		{157D8F11-BB39-4B14-A4B5-189CD5656212}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{157D8F11-BB39-4B14-A4B5-189CD5656212}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{157D8F11-BB39-4B14-A4B5-189CD5656212}.Release|Any CPU.Build.0 = Release|Any CPU
+		{84995095-D57C-4E5D-ACCE-5856830FB217}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84995095-D57C-4E5D-ACCE-5856830FB217}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84995095-D57C-4E5D-ACCE-5856830FB217}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84995095-D57C-4E5D-ACCE-5856830FB217}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{3715C4CF-AC71-41C5-A7ED-13B83884C35D} = {B1A4FC38-6B25-4CF1-B4B8-A52AB82EC004}

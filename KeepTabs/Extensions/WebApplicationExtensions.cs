@@ -48,14 +48,11 @@ public static class WebApplicationExtensions
         app.UseSwaggerUi(options => { options.DocumentPath = "/openapi/v1.json"; });
     }
 
-    public static void ApplyMigrations(this WebApplication app)
+    public static async Task ApplyMigrations(this WebApplication app)
     {
-        if (app.Environment.IsDevelopment())
-        {
-            var context = app.Services.CreateAsyncScope()
-                .ServiceProvider.GetRequiredService<KeepTabsDbContext>();
+        var context = app.Services.CreateAsyncScope()
+            .ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-            context.Database.Migrate();
-        }
+       await context.Database.MigrateAsync();
     }
 }
