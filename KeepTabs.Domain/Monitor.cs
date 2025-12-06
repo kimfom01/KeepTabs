@@ -1,10 +1,10 @@
-using KeepTabs.Entities.Base;
+using KeepTabs.Domain.Common;
 
-namespace KeepTabs.Entities;
+namespace KeepTabs.Domain;
 
-public class Monitor : BaseEntity
+public class Monitor : BaseAuditableEntity
 {
-    public string UserId { get; set; }
+    public required string UserId { get; set; }
 
     public string Name { get; set; } = default!;
     public string Url { get; set; } = default!;
@@ -15,7 +15,7 @@ public class Monitor : BaseEntity
 
     public int? ExpectedStatusCode { get; set; }
     public bool IsPaused { get; set; }
-    
+
     public DateTimeOffset? LastCheckedAt { get; set; }
     public bool? LastStatusUp { get; set; }
 

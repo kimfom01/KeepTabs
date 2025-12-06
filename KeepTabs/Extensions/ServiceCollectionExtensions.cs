@@ -1,76 +1,102 @@
-using System.Reflection;
+using System.Text.Json.Serialization;
 using Asp.Versioning;
 using Hangfire;
 using Hangfire.PostgreSql;
-using KeepTabs.Database;
-using KeepTabs.Entities;
+using KeepTabs.Domain.Common;
+using KeepTabs.Infrastructure.Database;
+using KeepTabs.Infrastructure.Identity;
+using KeepTabs.Services;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.OpenApi;
+using NSwag;
+using NSwag.Generation.Processors.Security;
 
 namespace KeepTabs.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static void ConfigureSwagger(this IServiceCollection services)
+    extension(IServiceCollection services)
     {
-        services.AddSwaggerGen(options =>
+        public void AddWebServices()
         {
-            options.SwaggerDoc("v1", new OpenApiInfo
+            services.AddOpenApi();
+            services.ConfigureOpenApiDocument();
+            services.AddAuthorization();
+            services.AddHttpClient();
+            services.ConfigureIdentity();
+            services.AddEndpointsApiExplorer();
+            services.AddHttpContextAccessor();
+            services.ConfigureHangfire();
+            services.ConfigureApiVersioning();
+            services.ConfigureForwardedHeadersOptions();
+            services.AddHttpClient();
+            services.ConfigureJsonSerialization();
+
+            services.AddScoped<IUser, CurrentUser>();
+        }
+
+        private void ConfigureOpenApiDocument()
+        {
+            services.AddOpenApiDocument((configure, _) =>
             {
-                Version = "v1",
-                Title = "KeepTabs API",
-                Description = "OpenAPI Docs for KeepTabs API."
+                configure.Title = "KeepTabs API";
+                configure.Description = "OpenAPI Docs for KeepTabs API.";
+                configure.Version = "v1";
             });
+        }
 
-            var xmlFilename = $"{Assembly.GetEntryAssembly()?.GetName().Name}.xml";
-            options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
-        });
-    }
-
-    public static void ConfigureHangfire(this IServiceCollection services)
-    {
-        services.AddHangfireServer(options => { options.ServerName = "KeepTabs Hangfire Server"; });
-        services.AddHangfire((provider, hangfireConfig) =>
+        private void ConfigureApiVersioning()
         {
-            var configuration = provider.GetRequiredService<IConfiguration>();
-            hangfireConfig.UsePostgreSqlStorage(options =>
-                options.UseNpgsqlConnection(configuration.GetConnectionString("keeptabsdb")));
-        });
-    }
+            services.AddApiVersioning(options =>
+                {
+                    options.DefaultApiVersion = new ApiVersion(1, 0);
+                    options.ReportApiVersions = true;
+                    options.AssumeDefaultVersionWhenUnspecified = true;
+                    options.ApiVersionReader = new UrlSegmentApiVersionReader();
+                })
+                .AddApiExplorer(options =>
+                {
+                    options.GroupNameFormat = "'v'V";
+                    options.SubstituteApiVersionInUrl = true;
+                });
+        }
 
-    public static void ConfigureApiVersioning(this IServiceCollection services)
-    {
-        services.AddApiVersioning(options =>
+        private void ConfigureHangfire()
+        {
+            services.AddHangfireServer(options => { options.ServerName = "KeepTabs Hangfire Server"; });
+            services.AddHangfire((provider, hangfireConfig) =>
             {
-                options.DefaultApiVersion = new ApiVersion(1, 0);
-                options.ReportApiVersions = true;
-                options.AssumeDefaultVersionWhenUnspecified = true;
-                options.ApiVersionReader = new UrlSegmentApiVersionReader();
-            })
-            .AddApiExplorer(options =>
-            {
-                options.GroupNameFormat = "'v'V";
-                options.SubstituteApiVersionInUrl = true;
+                var configuration = provider.GetRequiredService<IConfiguration>();
+                hangfireConfig.UsePostgreSqlStorage(options =>
+                    options.UseNpgsqlConnection(configuration.GetConnectionString("keeptabsdb")));
             });
-    }
+        }
 
-    public static void ConfigureForwardedHeadersOptions(this IServiceCollection services)
-    {
-        services.Configure<ForwardedHeadersOptions>(opt =>
+        private void ConfigureForwardedHeadersOptions()
         {
-            opt.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-        });
-    }
-
-    public static void ConfigureIdentity(this IServiceCollection services)
-    {
-        services.AddIdentityApiEndpoints<User>(options =>
+            services.Configure<ForwardedHeadersOptions>(opt =>
             {
-                options.SignIn.RequireConfirmedAccount = false;
-                options.User.RequireUniqueEmail = true;
-            })
-            .AddRoles<IdentityRole>()
-            .AddEntityFrameworkStores<ApplicationDbContext>();
+                opt.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+            });
+        }
+
+        private void ConfigureIdentity()
+        {
+            services.AddIdentityApiEndpoints<ApplicationUser>(options =>
+                {
+                    options.SignIn.RequireConfirmedAccount = false;
+                    options.User.RequireUniqueEmail = true;
+                })
+                .AddRoles<IdentityRole>()
+                .AddEntityFrameworkStores<ApplicationDbContext>();
+        }
+
+        private void ConfigureJsonSerialization()
+        {
+            services.ConfigureHttpJsonOptions(options =>
+            {
+                options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+            });
+        }
     }
 }

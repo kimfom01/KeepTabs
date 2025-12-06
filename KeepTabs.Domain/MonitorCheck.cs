@@ -1,8 +1,8 @@
-using KeepTabs.Entities.Base;
+using KeepTabs.Domain.Common;
 
-namespace KeepTabs.Entities;
+namespace KeepTabs.Domain;
 
-public class MonitorCheck : BaseEntity
+public class MonitorCheck : BaseAuditableEntity
 {
     public Guid MonitorId { get; set; }
     public Monitor Monitor { get; set; } = default!;

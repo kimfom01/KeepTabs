@@ -1,8 +1,8 @@
-using KeepTabs.Entities.Base;
+using KeepTabs.Domain.Common;
 
-namespace KeepTabs.Entities;
+namespace KeepTabs.Domain;
 
-public class AlertLog : BaseEntity
+public class AlertLog : BaseAuditableEntity
 {
     public Guid AlertRuleId { get; set; }
     public AlertRule AlertRule { get; set; } = default!;

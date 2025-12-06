@@ -1,8 +1,8 @@
-using KeepTabs.Entities.Base;
+using KeepTabs.Domain.Common;
 
-namespace KeepTabs.Entities;
+namespace KeepTabs.Domain;
 
-public class AlertRule : BaseEntity
+public class AlertRule : BaseAuditableEntity
 {
     public Guid MonitorId { get; set; }
     public Monitor Monitor { get; set; } = default!;

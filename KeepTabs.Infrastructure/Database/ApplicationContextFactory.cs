@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.Extensions.Configuration;
 
-namespace KeepTabs.Database;
+namespace KeepTabs.Infrastructure.Database;
 
 public class ApplicationContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>
 {
