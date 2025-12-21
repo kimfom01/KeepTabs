@@ -30,9 +30,7 @@ app.SetupSwaggerDocs();
 var apiGroup = app.MapGroup("api");
 
 apiGroup.MapGet("/", () => Results.Ok("Hello world"))
-    .WithSummary("Greetings")
-    .WithDescription("""Returns a "Hello world" message""")
-    .WithTags("KeepTabs");
+    .ExcludeFromDescription();
 
 apiGroup.MapUserEndpoints();
 apiGroup.MapMonitorEndpoints();

@@ -1,23 +1,21 @@
 ﻿services:
   keeptabs:
+    image: keeptabs
     build:
       context: .
-    restart: unless-stopped
-    ports:
-      - "7070:8080"
+      dockerfile: KeepTabs/Dockerfile
     networks:
       - keeptabs-network
-  database:
-    image: mongo
-    restart: unless-stopped
     ports:
-      - "27017:27017"
+      - "8080:8080"
+
+  keeptabs.worker:
+    image: keeptabs.worker
+    build:
+      context: .
+      dockerfile: KeepTabs.Worker/Dockerfile
     networks:
       - keeptabs-network
-    volumes:
-      - mongo_data:/data/db
 
 networks:
   keeptabs-network:
-volumes:
-  mongo_data:

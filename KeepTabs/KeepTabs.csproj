@@ -7,22 +7,16 @@
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
         <UserSecretsId>bce97326-16b3-4764-a556-9a68569d76dd</UserSecretsId>
         <PreserveCompilationContext>true</PreserveCompilationContext>
-<!--        <GenerateDocumentationFile>true</GenerateDocumentationFile>-->
-        <!--    <NoWarn>$(NoWarn);1591</NoWarn>-->
         <LangVersion>default</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="wwwroot\**\*"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.1.0" />
+        <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.1.0"/>
         <PackageReference Include="Hangfire.AspNetCore" Version="1.8.22"/>
         <PackageReference Include="Hangfire.Dashboard.BasicAuthorization" Version="1.0.2"/>
-        <PackageReference Include="Hangfire.PostgreSql" Version="1.20.13" />
+        <PackageReference Include="Hangfire.PostgreSql" Version="1.20.13"/>
         <PackageReference Include="MediatR" Version="14.0.0"/>
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1"/>
         <PackageReference Include="NSwag.AspNetCore" Version="14.6.3"/>
         <PackageReference Include="Serilog.AspNetCore" Version="10.0.0"/>
     </ItemGroup>

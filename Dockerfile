@@ -7,6 +7,9 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0.100-alpine3.22 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["KeepTabs/KeepTabs.csproj", "KeepTabs/"]
+COPY ["KeepTabs.Application/KeepTabs.Application.csproj", "KeepTabs.Application/"]
+COPY ["KeepTabs.Domain/KeepTabs.Domain.csproj", "KeepTabs.Domain/"]
+COPY ["KeepTabs.Infrastructure/KeepTabs.Infrastructure.csproj", "KeepTabs.Infrastructure/"]
 COPY ["ServiceDefaults/ServiceDefaults.csproj", "ServiceDefaults/"]
 RUN dotnet restore "KeepTabs/KeepTabs.csproj"
 COPY . .

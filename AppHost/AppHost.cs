@@ -8,13 +8,21 @@ var postgres = builder.AddPostgres("postgres")
     .WithPgAdmin()
     .AddDatabase("keeptabsdb");
 
-var api = builder.AddProject<KeepTabs>("KeepTabs")
-    .WithReference(postgres)
-    .WaitFor(postgres);
+var rabbitmq = builder.AddRabbitMQ("rabbitmq")
+    .WithLifetime(ContainerLifetime.Persistent)
+    .WithManagementPlugin();
 
-builder.AddProject<KeepTabs_Worker>("Worker")
+var api = builder.AddProject<KeepTabs>("keeptabs")
     .WithReference(postgres)
     .WaitFor(postgres)
+    .WithReference(rabbitmq)
+    .WaitFor(rabbitmq);
+
+builder.AddProject<KeepTabs_Worker>("worker")
+    .WithReference(postgres)
+    .WaitFor(postgres)
+    .WithReference(rabbitmq)
+    .WaitFor(rabbitmq)
     .WaitFor(api);
 
 await builder.Build()
