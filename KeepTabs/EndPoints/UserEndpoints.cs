@@ -4,7 +4,7 @@ namespace KeepTabs.EndPoints;
 
 public static class Users
 {
-    public static void MapUserEndpoints(this WebApplication app)
+    public static void MapUserEndpoints(this RouteGroupBuilder app)
     {
         app.MapIdentityApi<ApplicationUser>()
             .WithTags("Auth");

@@ -29,3 +29,9 @@ public enum ProtocolType
     Ping,
     Tcp
 }
+
+public sealed class MonitorCreateEvent : BaseEvent
+{
+    public Guid MonitorId { get; init; }
+    public required string UserId { get; init; }
+}

@@ -1,3 +1,4 @@
+using System.Reflection;
 using KeepTabs.Infrastructure.Database.Interceptors;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,5 +10,8 @@ public static class DependencyInjection
     public static void AddInfrastructureServices(this IServiceCollection services)
     {
         services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
+        services.AddScoped<ISaveChangesInterceptor, DispatchDomainEventsInterceptor>();
+
+        services.AddMediatR(cfg => { cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()); });
     }
 }

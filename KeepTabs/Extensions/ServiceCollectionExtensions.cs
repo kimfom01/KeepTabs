@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using Asp.Versioning;
 using Hangfire;
 using Hangfire.PostgreSql;
 using KeepTabs.Domain.Common;
@@ -8,8 +7,6 @@ using KeepTabs.Infrastructure.Identity;
 using KeepTabs.Services;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
-using NSwag;
-using NSwag.Generation.Processors.Security;
 
 namespace KeepTabs.Extensions;
 
@@ -27,10 +24,10 @@ public static class ServiceCollectionExtensions
             services.AddEndpointsApiExplorer();
             services.AddHttpContextAccessor();
             services.ConfigureHangfire();
-            services.ConfigureApiVersioning();
             services.ConfigureForwardedHeadersOptions();
             services.AddHttpClient();
             services.ConfigureJsonSerialization();
+            services.ConfigureCors();
 
             services.AddScoped<IUser, CurrentUser>();
         }
@@ -43,22 +40,6 @@ public static class ServiceCollectionExtensions
                 configure.Description = "OpenAPI Docs for KeepTabs API.";
                 configure.Version = "v1";
             });
-        }
-
-        private void ConfigureApiVersioning()
-        {
-            services.AddApiVersioning(options =>
-                {
-                    options.DefaultApiVersion = new ApiVersion(1, 0);
-                    options.ReportApiVersions = true;
-                    options.AssumeDefaultVersionWhenUnspecified = true;
-                    options.ApiVersionReader = new UrlSegmentApiVersionReader();
-                })
-                .AddApiExplorer(options =>
-                {
-                    options.GroupNameFormat = "'v'V";
-                    options.SubstituteApiVersionInUrl = true;
-                });
         }
 
         private void ConfigureHangfire()
@@ -96,6 +77,14 @@ public static class ServiceCollectionExtensions
             services.ConfigureHttpJsonOptions(options =>
             {
                 options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+            });
+        }
+
+        private void ConfigureCors()
+        {
+            services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(policy => { policy.WithOrigins("http://localhost:5173"); });
             });
         }
     }

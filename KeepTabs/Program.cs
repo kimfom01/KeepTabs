@@ -21,17 +21,21 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseDefaultFiles();
 app.UseStaticFiles();
+app.UseCors();
 app.SetupHangfireDashboard();
 app.SetupSwaggerDocs();
 
-app.MapGet("/", () => Results.Ok("Hello world"))
+var apiGroup = app.MapGroup("api");
+
+apiGroup.MapGet("/", () => Results.Ok("Hello world"))
     .WithSummary("Greetings")
     .WithDescription("""Returns a "Hello world" message""")
     .WithTags("KeepTabs");
 
-app.MapUserEndpoints();
-app.MapMonitorEndpoints();
+apiGroup.MapUserEndpoints();
+apiGroup.MapMonitorEndpoints();
 app.MapDefaultEndpoints();
 
 await app.RunAsync();
