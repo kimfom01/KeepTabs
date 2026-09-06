@@ -2,36 +2,44 @@ using KeepTabs.Domain.Common;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace KeepTabs.Infrastructure.Database.Interceptors;
 
-public class DispatchDomainEventsInterceptor : SaveChangesInterceptor
+public sealed class DispatchDomainEventsInterceptor : SaveChangesInterceptor
 {
-    private readonly IMediator _mediator;
+    private readonly IServiceScopeFactory _scopeFactory;
 
-    public DispatchDomainEventsInterceptor(IMediator mediator)
+    public DispatchDomainEventsInterceptor(IServiceScopeFactory scopeFactory)
     {
-        _mediator = mediator;
+        _scopeFactory = scopeFactory;
     }
 
-    public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
+    public override int SavedChanges(SaveChangesCompletedEventData eventData, int result)
     {
-        DispatchDomainEvents(eventData.Context).GetAwaiter().GetResult();
+        // Persistence in this solution is async-only. Blocking here preserves the EF Core
+        // interceptor contract for the rare synchronous SaveChanges path.
+        DispatchDomainEventsAsync(eventData.Context).GetAwaiter().GetResult();
 
-        return base.SavingChanges(eventData, result);
-
+        return base.SavedChanges(eventData, result);
     }
 
-    public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+    public override async ValueTask<int> SavedChangesAsync(
+        SaveChangesCompletedEventData eventData,
+        int result,
+        CancellationToken cancellationToken = default)
     {
-        await DispatchDomainEvents(eventData.Context);
+        await DispatchDomainEventsAsync(eventData.Context, cancellationToken);
 
-        return await base.SavingChangesAsync(eventData, result, cancellationToken);
+        return await base.SavedChangesAsync(eventData, result, cancellationToken);
     }
 
-    private async Task DispatchDomainEvents(DbContext? context)
+    private async Task DispatchDomainEventsAsync(DbContext? context, CancellationToken cancellationToken = default)
     {
-        if (context == null) return;
+        if (context is null)
+        {
+            return;
+        }
 
         var entities = context.ChangeTracker
             .Entries<BaseEntity>()
@@ -43,9 +51,14 @@ public class DispatchDomainEventsInterceptor : SaveChangesInterceptor
             .SelectMany(e => e.DomainEvents)
             .ToList();
 
-        entities.ToList().ForEach(e => e.ClearDomainEvents());
+        entities.ForEach(e => e.ClearDomainEvents());
+
+        using var scope = _scopeFactory.CreateScope();
+        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
         foreach (var domainEvent in domainEvents)
-            await _mediator.Publish(domainEvent);
+        {
+            await mediator.Publish(domainEvent, cancellationToken);
+        }
     }
 }

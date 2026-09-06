@@ -2,11 +2,9 @@ using System.Text.Json.Serialization;
 using Hangfire;
 using Hangfire.PostgreSql;
 using KeepTabs.Domain.Common;
-using KeepTabs.Infrastructure.Database;
-using KeepTabs.Infrastructure.Identity;
+using KeepTabs.Middleware;
 using KeepTabs.Services;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.Identity;
 
 namespace KeepTabs.Extensions;
 
@@ -14,32 +12,21 @@ public static class ServiceCollectionExtensions
 {
     extension(IServiceCollection services)
     {
-        public void AddWebServices()
+        public void AddWebServices(IConfiguration configuration)
         {
             services.AddOpenApi();
-            services.ConfigureOpenApiDocument();
-            services.AddAuthorization();
-            services.AddHttpClient();
-            services.ConfigureIdentity();
             services.AddEndpointsApiExplorer();
+            services.AddProblemDetails();
+            services.AddExceptionHandler<ApiExceptionHandler>();
+            services.AddValidation();
+            services.AddHttpClient();
+            services.AddKeepTabsAuthentication();
             services.AddHttpContextAccessor();
+            services.ConfigureCors(configuration);
             services.ConfigureHangfire();
             services.ConfigureForwardedHeadersOptions();
-            services.AddHttpClient();
             services.ConfigureJsonSerialization();
-            services.ConfigureCors();
-
             services.AddScoped<IUser, CurrentUser>();
-        }
-
-        private void ConfigureOpenApiDocument()
-        {
-            services.AddOpenApiDocument((configure, _) =>
-            {
-                configure.Title = "KeepTabs API";
-                configure.Description = "OpenAPI Docs for KeepTabs API.";
-                configure.Version = "v1";
-            });
         }
 
         private void ConfigureHangfire()
@@ -61,30 +48,37 @@ public static class ServiceCollectionExtensions
             });
         }
 
-        private void ConfigureIdentity()
-        {
-            services.AddIdentityApiEndpoints<ApplicationUser>(options =>
-                {
-                    options.SignIn.RequireConfirmedAccount = false;
-                    options.User.RequireUniqueEmail = true;
-                })
-                .AddRoles<IdentityRole>()
-                .AddEntityFrameworkStores<ApplicationDbContext>();
-        }
-
         private void ConfigureJsonSerialization()
         {
             services.ConfigureHttpJsonOptions(options =>
             {
                 options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+                options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
             });
         }
 
-        private void ConfigureCors()
+        private void ConfigureCors(IConfiguration configuration)
         {
+            // AllowedOrigins is configured as a comma-separated scalar (appsettings
+            // or Cors__AllowedOrigins env var), so parse it explicitly instead of
+            // binding. Array syntax is still honored when present.
+            var section = configuration.GetSection($"{CorsOptions.SectionName}:AllowedOrigins");
+            var allowedOrigins = section.GetChildren().Any()
+                ? CorsOptions.NormalizeOrigins(section.Get<string[]>())
+                : CorsOptions.ParseAllowedOrigins(section.Value);
+
+            services.AddOptions<CorsOptions>()
+                .Configure(options => options.AllowedOrigins = allowedOrigins)
+                .ValidateDataAnnotations()
+                .Validate(options => options.AllowedOrigins.Length > 0, "Cors:AllowedOrigins must contain at least one origin.")
+                .ValidateOnStart();
+
             services.AddCors(options =>
             {
-                options.AddDefaultPolicy(policy => { policy.WithOrigins("http://localhost:5173"); });
+                options.AddPolicy(CorsPolicies.Frontend, policy => policy
+                    .WithOrigins(allowedOrigins)
+                    .AllowAnyHeader()
+                    .AllowAnyMethod());
             });
         }
     }

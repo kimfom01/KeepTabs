@@ -1,31 +1,21 @@
-using KeepTabs.Application.Users.Dtos;
-using KeepTabs.Infrastructure.Database;
-using Microsoft.EntityFrameworkCore;
-
 namespace KeepTabs.Application.Users;
 
-public class UserService : IUserService
+/// <summary>
+/// Reads the current authenticated user profile.
+/// </summary>
+public sealed class UserService : IUserService
 {
-    private readonly ApplicationDbContext _dbContext;
+    private readonly IUserAccountStore _userAccounts;
 
-    public UserService(ApplicationDbContext dbContext)
+    public UserService(IUserAccountStore userAccounts)
     {
-        _dbContext = dbContext;
+        _userAccounts = userAccounts;
     }
 
-    public async Task<GetUserResponse?> GetUsers(string userId, CancellationToken cancellationToken = default)
+    public async Task<Dtos.GetUserResponse?> GetUserByIdAsync(string userId, CancellationToken cancellationToken = default)
     {
-        var user = await _dbContext.Users
-            .Where(u => u.Id == userId)
-            .FirstOrDefaultAsync(cancellationToken);
+        var user = await _userAccounts.FindByIdAsync(userId, cancellationToken);
 
         return user?.ToResponse();
-    }
-
-    public IEnumerable<GetUserResponse> GetUsers()
-    {
-        var users = _dbContext.Users.AsNoTracking();
-
-        return users.Select(u => u.ToResponse());
     }
 }

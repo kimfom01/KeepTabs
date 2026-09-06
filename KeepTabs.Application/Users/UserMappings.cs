@@ -1,18 +1,16 @@
-using KeepTabs.Application.Users.Dtos;
-using KeepTabs.Infrastructure.Identity;
-
 namespace KeepTabs.Application.Users;
 
+/// <summary>
+/// Maps application-level user accounts to API responses.
+/// </summary>
 public static class UserMappings
 {
-    public static GetUserResponse ToResponse(this ApplicationUser user)
+    public static Dtos.GetUserResponse ToResponse(this UserAccount user)
     {
-        return new GetUserResponse
-        {
-            UserId = user.Id,
-            ApiKey = user.ApiKey,
-            FirstName = user.FirstName,
-            LastName = user.LastName
-        };
+        return new Dtos.GetUserResponse(
+            user.Id,
+            user.Email,
+            user.FirstName,
+            user.LastName);
     }
 }

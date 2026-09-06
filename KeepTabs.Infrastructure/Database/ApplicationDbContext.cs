@@ -1,4 +1,5 @@
 using System.Reflection;
+using KeepTabs.Application.Common.Interfaces;
 using KeepTabs.Domain;
 using KeepTabs.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
@@ -8,12 +9,12 @@ using Monitor = KeepTabs.Domain.Monitor;
 
 namespace KeepTabs.Infrastructure.Database;
 
-public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
+public sealed class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplicationDbContext
 {
-    public DbSet<AlertLog> AlertLogs { get; set; }
-    public DbSet<AlertRule> AlertRules { get; set; }
-    public DbSet<Monitor> Monitors { get; set; }
-    public DbSet<MonitorCheck> MonitorChecks { get; set; }
+    public DbSet<AlertLog> AlertLogs => Set<AlertLog>();
+    public DbSet<AlertRule> AlertRules => Set<AlertRule>();
+    public DbSet<Monitor> Monitors => Set<Monitor>();
+    public DbSet<MonitorCheck> MonitorChecks => Set<MonitorCheck>();
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
     {

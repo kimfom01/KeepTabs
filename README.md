@@ -33,6 +33,25 @@ You can run the entire stack locally or on any server using:
 docker compose up -d
 ```
 
+Create a `.env` file next to `docker-compose.yaml` before starting the stack:
+
+```bash
+POSTGRES_PASSWORD=replace-with-a-strong-password
+RABBITMQ_DEFAULT_PASS=replace-with-a-strong-password
+JWT_KEY=replace-with-at-least-32-characters
+JWT_ISSUER=KeepTabs
+JWT_AUDIENCE=KeepTabs
+JWT_EXPIRY_MINUTES=60
+```
+
+For local API development, do not commit secrets. Use user secrets instead:
+
+```bash
+dotnet user-secrets set "Jwt:Key" "replace-with-at-least-32-characters" --project KeepTabs/KeepTabs.csproj
+```
+
+API keys are one-time values: only a hash is stored, so save the regenerated key immediately. Existing plaintext API-key values are cleared by the `SecureApiKeys` migration.
+
 ## 📄 License
 
 This project is open-source under the MIT License.

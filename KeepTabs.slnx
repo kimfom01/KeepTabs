@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/Aspire/">
+    <Project Path="AppHost/AppHost.csproj" />
+    <Project Path="ServiceDefaults/ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".dockerignore" />
+    <File Path="docker-compose.yaml" />
+    <File Path="Dockerfile" />
+    <File Path="Dockerfile.Worker" />
+    <File Path="PROJECTS.md" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="KeepTabs.Application/KeepTabs.Application.csproj" />
+  <Project Path="KeepTabs.Domain/KeepTabs.Domain.csproj" />
+  <Project Path="KeepTabs.Infrastructure/KeepTabs.Infrastructure.csproj" />
+  <Project Path="KeepTabs.Tests/KeepTabs.Tests.csproj" />
+  <Project Path="KeepTabs.Worker/KeepTabs.Worker.csproj" />
+  <Project Path="KeepTabs/KeepTabs.csproj" />
+</Solution>

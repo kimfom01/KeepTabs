@@ -9,6 +9,7 @@ public class MonitorConfiguration : IEntityTypeConfiguration<Monitor>
     public void Configure(EntityTypeBuilder<Monitor> builder)
     {
         builder.HasIndex(monitor => new { monitor.UserId, monitor.Name }).IsUnique();
-        builder.Property(monitor => monitor.Url).HasMaxLength(1024);
+        builder.Property(monitor => monitor.Name).HasMaxLength(Monitor.MaxNameLength);
+        builder.Property(monitor => monitor.Url).HasMaxLength(Monitor.MaxUrlLength);
     }
 }

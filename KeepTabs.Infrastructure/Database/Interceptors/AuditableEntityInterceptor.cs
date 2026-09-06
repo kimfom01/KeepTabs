@@ -1,19 +1,21 @@
+using System.Security.Claims;
 using KeepTabs.Domain.Common;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace KeepTabs.Infrastructure.Database.Interceptors;
 
-public class AuditableEntityInterceptor : SaveChangesInterceptor
+public sealed class AuditableEntityInterceptor : SaveChangesInterceptor
 {
-    private readonly IUser _user;
-    private readonly TimeProvider _dateTime;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly TimeProvider _timeProvider;
 
-    public AuditableEntityInterceptor(IUser user, TimeProvider dateTime)
+    public AuditableEntityInterceptor(IHttpContextAccessor httpContextAccessor, TimeProvider timeProvider)
     {
-        _user = user;
-        _dateTime = dateTime;
+        _httpContextAccessor = httpContextAccessor;
+        _timeProvider = timeProvider;
     }
 
     public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
@@ -33,20 +35,25 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
 
     private void UpdateEntities(DbContext? context)
     {
-        if (context == null) return;
+        if (context is null)
+        {
+            return;
+        }
+
+        var userId = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var utcNow = _timeProvider.GetUtcNow();
 
         foreach (var entry in context.ChangeTracker.Entries<BaseAuditableEntity>())
         {
             if (entry.State is EntityState.Added or EntityState.Modified || entry.HasChangedOwnedEntities())
             {
-                var utcNow = _dateTime.GetUtcNow();
                 if (entry.State == EntityState.Added)
                 {
-                    entry.Entity.CreatedBy = _user.Id;
+                    entry.Entity.CreatedBy = userId;
                     entry.Entity.Created = utcNow;
                 }
 
-                entry.Entity.LastModifiedBy = _user.Id;
+                entry.Entity.LastModifiedBy = userId;
                 entry.Entity.LastModified = utcNow;
             }
         }

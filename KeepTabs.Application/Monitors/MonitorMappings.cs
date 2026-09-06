@@ -3,16 +3,19 @@ using Monitor = KeepTabs.Domain.Monitor;
 
 namespace KeepTabs.Application.Monitors;
 
+/// <summary>
+/// Maps monitor requests and entities across the application boundary.
+/// </summary>
 public static class MonitorMappings
 {
-    public static Monitor ToEntity(this CreateMonitorRequest request)
+    public static Monitor ToEntity(string userId, CreateMonitorRequest request)
     {
         return new Monitor
         {
             Id = Guid.CreateVersion7(),
-            UserId = request.UserId,
-            Name = request.Name,
-            Url = request.Url,
+            UserId = userId,
+            Name = request.Name.Trim(),
+            Url = request.Url.Trim(),
             Protocol = request.Protocol,
             CheckIntervalSeconds = request.CheckIntervalSeconds,
             TimeoutSeconds = request.TimeoutSeconds,

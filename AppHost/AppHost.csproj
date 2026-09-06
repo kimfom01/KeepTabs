@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Sdk Name="Aspire.AppHost.Sdk" Version="9.0.0"/>
+    <Sdk Name="Aspire.AppHost.Sdk" Version="13.5.3"/>
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -8,14 +8,15 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <IsAspireHost>true</IsAspireHost>
+        <AspireUseCliBundle>true</AspireUseCliBundle>
         <UserSecretsId>31e58c4c-5c73-4cd9-8242-527aac6cbecb</UserSecretsId>
         <LangVersion>default</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Aspire.Hosting.AppHost" Version="13.1.0" />
-        <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.1.0" />
-        <PackageReference Include="Aspire.Hosting.RabbitMQ" Version="13.1.0" />
+        <PackageReference Include="Aspire.Hosting.AppHost" Version="13.5.3" />
+        <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.5.3" />
+        <PackageReference Include="Aspire.Hosting.RabbitMQ" Version="13.5.3" />
     </ItemGroup>
 
     <ItemGroup>

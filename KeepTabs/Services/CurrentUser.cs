@@ -3,7 +3,7 @@ using KeepTabs.Domain.Common;
 
 namespace KeepTabs.Services;
 
-public class CurrentUser : IUser
+public sealed class CurrentUser : IUser
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
 
