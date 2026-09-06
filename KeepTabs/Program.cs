@@ -36,6 +36,14 @@ apiGroup.MapGet("/", () => TypedResults.Ok("Hello world"))
 
 apiGroup.MapUserEndpoints();
 apiGroup.MapMonitorEndpoints();
+
+// Unknown /api/* routes stay JSON 404s instead of falling through to the SPA.
+apiGroup.Map("{*path}", () => TypedResults.NotFound())
+    .ExcludeFromDescription();
+
 app.MapDefaultEndpoints();
+
+// Serves the Vite SPA from wwwroot; client-side routes fall back to index.html.
+app.MapFallbackToFile("index.html");
 
 await app.RunAsync();

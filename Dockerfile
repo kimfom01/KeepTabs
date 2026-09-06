@@ -3,6 +3,15 @@ USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
 
+# Builds the React SPA into KeepTabs/wwwroot so the API serves UI and API as one app.
+FROM node:24-alpine AS frontend
+RUN npm install -g pnpm@11
+WORKDIR /src/front-src
+COPY ["front-src/package.json", "front-src/pnpm-lock.yaml", "./"]
+RUN pnpm install --frozen-lockfile
+COPY front-src/ ./
+RUN pnpm build
+
 FROM mcr.microsoft.com/dotnet/sdk:10.0.100-alpine3.22 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
@@ -13,6 +22,7 @@ COPY ["KeepTabs.Infrastructure/KeepTabs.Infrastructure.csproj", "KeepTabs.Infras
 COPY ["ServiceDefaults/ServiceDefaults.csproj", "ServiceDefaults/"]
 RUN dotnet restore "KeepTabs/KeepTabs.csproj"
 COPY . .
+COPY --from=frontend /src/KeepTabs/wwwroot ./KeepTabs/wwwroot
 WORKDIR "/src/KeepTabs"
 RUN dotnet build "KeepTabs.csproj" -c $BUILD_CONFIGURATION --no-restore -o /app/build
 
