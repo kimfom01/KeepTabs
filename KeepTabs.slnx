@@ -8,7 +8,7 @@
     <File Path="docker-compose.yaml" />
     <File Path="Dockerfile" />
     <File Path="Dockerfile.Worker" />
-    <File Path="PROJECTS.md" />
+    <File Path="PLAN.md" />
     <File Path="README.md" />
   </Folder>
   <Project Path="KeepTabs.Application/KeepTabs.Application.csproj" />
