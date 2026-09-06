@@ -6,58 +6,20 @@ using KeepTabs.Application.Users;
 using KeepTabs.Domain;
 using KeepTabs.Infrastructure;
 using KeepTabs.Infrastructure.Database;
-using Microsoft.Data.Sqlite;
+using KeepTabs.Tests.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using DomainMonitor = KeepTabs.Domain.Monitor;
 
 namespace KeepTabs.Tests;
 
-/// <summary>
-/// Runs only when KEEP_TABS_TEST_POSTGRES supplies a Postgres connection string.
-/// History queries compare DateTimeOffset values, which SQLite cannot translate.
-/// </summary>
-internal sealed class PostgresFactAttribute : FactAttribute
+[Collection(DatabaseCollection.Name)]
+public sealed class MonitorServiceTests(PostgresFixture database)
 {
-    public PostgresFactAttribute()
-    {
-        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("KEEP_TABS_TEST_POSTGRES")))
-        {
-            Skip = "Requires KEEP_TABS_TEST_POSTGRES connection string.";
-        }
-    }
-}
-
-public sealed class MonitorServiceTests
-{
-    private static async Task<(ServiceProvider Provider, FakeUserStore Users)> CreateServicesAsync(
+    private async Task<(ServiceProvider Provider, FakeUserStore Users)> CreateServicesAsync(
         params string[] userIds)
     {
-        var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync();
-
-        var users = new FakeUserStore(userIds);
-        var services = new ServiceCollection();
-        services.AddLogging();
-        services.AddMonitorCheckingInfrastructure();
-        services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(connection));
-        var provider = services.BuildServiceProvider();
-
-        await using var scope = provider.CreateAsyncScope();
-        await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.EnsureCreatedAsync();
-
-        // Provider owns the connection lifetime through the returned handle.
-        return (provider, users);
-    }
-
-    private static async Task<(ServiceProvider Provider, FakeUserStore Users)> CreatePostgresServicesAsync(
-        params string[] userIds)
-    {
-        // History queries compare DateTimeOffset values, which SQLite cannot translate.
-        // These tests run against Postgres when a connection string is supplied (see PostgresFactAttribute).
-        var connectionString = Environment.GetEnvironmentVariable("KEEP_TABS_TEST_POSTGRES")
-            ?? throw new InvalidOperationException("Missing KEEP_TABS_TEST_POSTGRES connection string.");
-
+        var connectionString = await database.CreateDatabaseAsync();
         var users = new FakeUserStore(userIds);
         var services = new ServiceCollection();
         services.AddLogging();
@@ -67,7 +29,6 @@ public sealed class MonitorServiceTests
 
         await using var scope = provider.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        await db.Database.EnsureDeletedAsync();
         await db.Database.MigrateAsync();
 
         return (provider, users);
@@ -377,10 +338,10 @@ public sealed class MonitorServiceTests
         }, users);
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task HistoryBoundedOrderedAndScoped()
     {
-        var (provider, users) = await CreatePostgresServicesAsync("user-1", "user-2");
+        var (provider, users) = await CreateServicesAsync("user-1", "user-2");
         await using var _ = provider;
 
         Guid id = Guid.Empty;
@@ -425,10 +386,10 @@ public sealed class MonitorServiceTests
         }, users);
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task HistoryDaysClampedToSupportedRange()
     {
-        var (provider, users) = await CreatePostgresServicesAsync("user-1");
+        var (provider, users) = await CreateServicesAsync("user-1");
         await using var _ = provider;
 
         Guid id = Guid.Empty;

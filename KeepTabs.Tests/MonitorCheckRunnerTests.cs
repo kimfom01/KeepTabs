@@ -3,7 +3,7 @@ using KeepTabs.Application.Monitoring;
 using KeepTabs.Domain;
 using KeepTabs.Infrastructure;
 using KeepTabs.Infrastructure.Database;
-using Microsoft.Data.Sqlite;
+using KeepTabs.Tests.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -11,14 +11,13 @@ using DomainMonitor = KeepTabs.Domain.Monitor;
 
 namespace KeepTabs.Tests;
 
-public sealed class MonitorCheckRunnerTests
+[Collection(DatabaseCollection.Name)]
+public sealed class MonitorCheckRunnerTests(PostgresFixture database)
 {
     [Fact]
     public async Task MonitorCheckPersistsNewCheckRowAndMonitorState()
     {
-        await using var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync();
-        await using var provider = CreateCheckServices(connection);
+        await using var provider = await CreateCheckServicesAsync();
 
         Guid monitorId;
         await using (var scope = provider.CreateAsyncScope())
@@ -63,9 +62,7 @@ public sealed class MonitorCheckRunnerTests
     [Fact]
     public async Task MonitorCheckDroppedWhenMonitorDeletedMidCheck()
     {
-        await using var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync();
-        await using var provider = CreateCheckServices(connection);
+        await using var provider = await CreateCheckServicesAsync();
 
         Guid monitorId;
         await using (var scope = provider.CreateAsyncScope())
@@ -104,15 +101,20 @@ public sealed class MonitorCheckRunnerTests
         }
     }
 
-    private static ServiceProvider CreateCheckServices(SqliteConnection connection)
+    private async Task<ServiceProvider> CreateCheckServicesAsync()
     {
+        var connectionString = await database.CreateDatabaseAsync();
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddMonitorChecking();
         services.AddMonitorCheckingInfrastructure();
-        services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(connection));
+        services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(connectionString));
+        var provider = services.BuildServiceProvider();
 
-        return services.BuildServiceProvider();
+        await using var scope = provider.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.MigrateAsync();
+
+        return provider;
     }
 
     private sealed class StubProbe(MonitorProbeResult result) : IMonitorProbe

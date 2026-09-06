@@ -1,25 +1,24 @@
 using KeepTabs.Application.Users;
 using KeepTabs.Infrastructure.Database;
 using KeepTabs.Infrastructure.Identity;
+using KeepTabs.Tests.Testing;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace KeepTabs.Tests;
 
-public sealed class IdentityStoreTests
+[Collection(DatabaseCollection.Name)]
+public sealed class IdentityStoreTests(PostgresFixture database)
 {
     private const string Password = "Str0ng!Pass1";
 
-    private static async Task<ServiceProvider> CreateServicesAsync()
+    private async Task<ServiceProvider> CreateServicesAsync()
     {
-        var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync();
-
+        var connectionString = await database.CreateDatabaseAsync();
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(connection));
+        services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(connectionString));
         services
             .AddIdentityCore<ApplicationUser>(options => options.User.RequireUniqueEmail = true)
             .AddRoles<IdentityRole>()
@@ -28,7 +27,7 @@ public sealed class IdentityStoreTests
         var provider = services.BuildServiceProvider();
 
         await using var scope = provider.CreateAsyncScope();
-        await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.EnsureCreatedAsync();
+        await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.MigrateAsync();
 
         return provider;
     }
