@@ -1,62 +1,85 @@
-using System.Reflection;
-using Asp.Versioning;
+using System.Text.Json.Serialization;
 using Hangfire;
 using Hangfire.PostgreSql;
+using KeepTabs.Domain.Common;
+using KeepTabs.Middleware;
+using KeepTabs.Services;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.OpenApi;
 
 namespace KeepTabs.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static void ConfigureSwagger(this IServiceCollection services)
+    extension(IServiceCollection services)
     {
-        services.AddSwaggerGen(options =>
+        public void AddWebServices(IConfiguration configuration)
         {
-            options.SwaggerDoc("v1", new OpenApiInfo
+            services.AddOpenApi();
+            services.AddEndpointsApiExplorer();
+            services.AddProblemDetails();
+            services.AddExceptionHandler<ApiExceptionHandler>();
+            services.AddValidation();
+            services.AddHttpClient();
+            services.AddKeepTabsAuthentication();
+            services.AddHttpContextAccessor();
+            services.ConfigureCors(configuration);
+            services.ConfigureHangfire();
+            services.ConfigureForwardedHeadersOptions();
+            services.ConfigureJsonSerialization();
+            services.AddScoped<IUser, CurrentUser>();
+        }
+
+        private void ConfigureHangfire()
+        {
+            services.AddHangfireServer(options => { options.ServerName = "KeepTabs Hangfire Server"; });
+            services.AddHangfire((provider, hangfireConfig) =>
             {
-                Version = "v1",
-                Title = "KeepTabs API",
-                Description = "OpenAPI Docs for KeepTabs API."
+                var configuration = provider.GetRequiredService<IConfiguration>();
+                hangfireConfig.UsePostgreSqlStorage(options =>
+                    options.UseNpgsqlConnection(configuration.GetConnectionString("keeptabsdb")));
             });
+        }
 
-            var xmlFilename = $"{Assembly.GetEntryAssembly()?.GetName().Name}.xml";
-            options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
-        });
-    }
-
-    public static void ConfigureHangfire(this IServiceCollection services)
-    {
-        services.AddHangfireServer(options => { options.ServerName = "KeepTabs Hangfire Server"; });
-        services.AddHangfire((provider, hangfireConfig) =>
+        private void ConfigureForwardedHeadersOptions()
         {
-            var configuration = provider.GetRequiredService<IConfiguration>();
-            hangfireConfig.UsePostgreSqlStorage(options =>
-                options.UseNpgsqlConnection(configuration.GetConnectionString("keeptabsdb")));
-        });
-    }
-
-    public static void ConfigureApiVersioning(this IServiceCollection services)
-    {
-        services.AddApiVersioning(options =>
+            services.Configure<ForwardedHeadersOptions>(opt =>
             {
-                options.DefaultApiVersion = new ApiVersion(1, 0);
-                options.ReportApiVersions = true;
-                options.AssumeDefaultVersionWhenUnspecified = true;
-                options.ApiVersionReader = new UrlSegmentApiVersionReader();
-            })
-            .AddApiExplorer(options =>
-            {
-                options.GroupNameFormat = "'v'V";
-                options.SubstituteApiVersionInUrl = true;
+                opt.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
             });
-    }
+        }
 
-    public static void ConfigureForwardedHeadersOptions(this IServiceCollection services)
-    {
-        services.Configure<ForwardedHeadersOptions>(opt =>
+        private void ConfigureJsonSerialization()
         {
-            opt.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-        });
+            services.ConfigureHttpJsonOptions(options =>
+            {
+                options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+                options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            });
+        }
+
+        private void ConfigureCors(IConfiguration configuration)
+        {
+            // AllowedOrigins is configured as a comma-separated scalar (appsettings
+            // or Cors__AllowedOrigins env var), so parse it explicitly instead of
+            // binding. Array syntax is still honored when present.
+            var section = configuration.GetSection($"{CorsOptions.SectionName}:AllowedOrigins");
+            var allowedOrigins = section.GetChildren().Any()
+                ? CorsOptions.NormalizeOrigins(section.Get<string[]>())
+                : CorsOptions.ParseAllowedOrigins(section.Value);
+
+            services.AddOptions<CorsOptions>()
+                .Configure(options => options.AllowedOrigins = allowedOrigins)
+                .ValidateDataAnnotations()
+                .Validate(options => options.AllowedOrigins.Length > 0, "Cors:AllowedOrigins must contain at least one origin.")
+                .ValidateOnStart();
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy(CorsPolicies.Frontend, policy => policy
+                    .WithOrigins(allowedOrigins)
+                    .AllowAnyHeader()
+                    .AllowAnyMethod());
+            });
+        }
     }
 }

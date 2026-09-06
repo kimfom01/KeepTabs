@@ -1,0 +1,91 @@
+import { BrowserRouter, Navigate, Route, Routes } from "react-router";
+import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider, useAuth } from "@/lib/auth";
+import { ApiKeysPage } from "@/pages/api-keys";
+import { DashboardPage } from "@/pages/dashboard";
+import { LoginPage } from "@/pages/login";
+import { MonitorDetailPage } from "@/pages/monitor-detail";
+import { NotFoundPage } from "@/pages/not-found";
+import { RegisterPage } from "@/pages/register";
+import { Spinner } from "@/components/ui/spinner";
+
+function RequireAuth({ children }: { children: React.ReactNode }) {
+  const { user, ready } = useAuth();
+
+  if (!ready) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Spinner className="size-6" />
+      </div>
+    );
+  }
+
+  return user ? <>{children}</> : <Navigate to="/login" replace />;
+}
+
+function RedirectIfSignedIn({ children }: { children: React.ReactNode }) {
+  const { user, ready } = useAuth();
+
+  if (!ready) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Spinner className="size-6" />
+      </div>
+    );
+  }
+
+  return user ? <Navigate to="/" replace /> : <>{children}</>;
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route
+            path="/login"
+            element={
+              <RedirectIfSignedIn>
+                <LoginPage />
+              </RedirectIfSignedIn>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <RedirectIfSignedIn>
+                <RegisterPage />
+              </RedirectIfSignedIn>
+            }
+          />
+          <Route
+            path="/"
+            element={
+              <RequireAuth>
+                <DashboardPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/monitors/:monitorId"
+            element={
+              <RequireAuth>
+                <MonitorDetailPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/api-keys"
+            element={
+              <RequireAuth>
+                <ApiKeysPage />
+              </RequireAuth>
+            }
+          />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </BrowserRouter>
+      <Toaster position="top-center" />
+    </AuthProvider>
+  );
+}

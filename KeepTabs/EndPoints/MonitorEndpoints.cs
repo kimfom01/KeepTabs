@@ -1,148 +1,217 @@
-using Asp.Versioning;
-using KeepTabs.Contracts.Requests;
-using KeepTabs.Database;
-using KeepTabs.Entities;
-using KeepTabs.Services;
-using Microsoft.EntityFrameworkCore;
-using Monitor = KeepTabs.Entities.Monitor;
+using KeepTabs.Application.Monitors;
+using KeepTabs.Application.Monitors.Dtos;
+using KeepTabs.Domain.Common;
+using KeepTabs.Extensions;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace KeepTabs.EndPoints;
 
 public static class MonitorEndpoints
 {
-    private const string MonitoringJobStatus = nameof(MonitoringJobStatus);
-
-    public static void MapMonitorEndpoints(this WebApplication app)
+    public static void MapMonitorEndpoints(this RouteGroupBuilder app)
     {
-        var apiVersionSet = app.NewApiVersionSet()
-            .HasApiVersion(new ApiVersion(1))
-            .ReportApiVersions()
-            .Build();
+        var group = app.MapGroup("monitors")
+            .WithTags("Monitors")
+            .RequireAuthorization(Extensions.AuthorizationPolicies.UserAccess);
 
-        app.MapGroup("v{v:apiVersion}/monitor")
-            .WithApiVersionSet(apiVersionSet)
-            .WithTags("Monitoring")
-            .MapStartMonitoring()
-            .MapCancelMonitoring()
-            .MapCheckMonitoringStatus()
-            .MapGetMonitoringHistory()
-            .MapGetMonitoringEntries();
+        group.MapPost("/", CreateMonitor)
+            .AddEndpointFilter<ValidationFilter<CreateMonitorRequest>>()
+            .WithName("CreateMonitor")
+            .WithSummary("Create a monitor")
+            .WithDescription("Creates a monitor owned by the authenticated caller.")
+            .Produces<GetMonitorResponse>(StatusCodes.Status201Created)
+            .ProducesValidationProblem();
+
+        group.MapGet("/", GetMonitors)
+            .WithName("GetMonitors")
+            .WithSummary("List monitors")
+            .WithDescription("Lists monitors owned by the authenticated caller.")
+            .Produces<IReadOnlyList<GetMonitorResponse>>();
+
+        group.MapGet("/{monitorId:guid}", GetMonitorById)
+            .WithName("GetMonitorById")
+            .WithSummary("Get a monitor")
+            .WithDescription("Returns a monitor owned by the authenticated caller.")
+            .Produces<GetMonitorResponse>()
+            .Produces(StatusCodes.Status404NotFound);
+
+        group.MapPut("/{monitorId:guid}", UpdateMonitor)
+            .AddEndpointFilter<ValidationFilter<UpdateMonitorRequest>>()
+            .WithName("UpdateMonitor")
+            .WithSummary("Update a monitor")
+            .WithDescription("Applies a partial update to a monitor owned by the authenticated caller.")
+            .Produces<GetMonitorResponse>()
+            .Produces(StatusCodes.Status404NotFound)
+            .ProducesValidationProblem();
+
+        group.MapDelete("/{monitorId:guid}", DeleteMonitor)
+            .WithName("DeleteMonitor")
+            .WithSummary("Delete a monitor")
+            .WithDescription("Deletes a monitor owned by the authenticated caller.")
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status404NotFound);
+
+        group.MapPatch("/{monitorId:guid}/pause", PauseMonitor)
+            .WithName("PauseMonitor")
+            .WithSummary("Pause a monitor")
+            .WithDescription("Pauses checks for a monitor owned by the authenticated caller.")
+            .Produces<GetMonitorResponse>()
+            .Produces(StatusCodes.Status404NotFound);
+
+        group.MapPatch("/{monitorId:guid}/resume", ResumeMonitor)
+            .WithName("ResumeMonitor")
+            .WithSummary("Resume a monitor")
+            .WithDescription("Resumes checks for a monitor owned by the authenticated caller.")
+            .Produces<GetMonitorResponse>()
+            .Produces(StatusCodes.Status404NotFound);
+
+        group.MapGet("/{monitorId:guid}/summary", GetSummary)
+            .WithName("GetMonitorSummary")
+            .WithSummary("Get monitor availability summary")
+            .WithDescription("Returns aggregate availability and response-time statistics.")
+            .Produces<MonitorSummaryResponse>()
+            .Produces(StatusCodes.Status404NotFound);
+
+        group.MapGet("/{monitorId:guid}/history", GetHistory)
+            .WithName("GetMonitorHistory")
+            .WithSummary("Get monitor check history")
+            .WithDescription("Returns recent persisted check results. Defaults to 30 days.")
+            .Produces<IReadOnlyList<MonitorCheckHistoryItem>>()
+            .Produces(StatusCodes.Status404NotFound);
     }
 
-    private static IEndpointRouteBuilder MapStartMonitoring(this IEndpointRouteBuilder group)
+    private static async Task<Results<CreatedAtRoute<GetMonitorResponse>, ValidationProblem>> CreateMonitor(
+        CreateMonitorRequest request,
+        IUser currentUser,
+        IMonitorService monitorService,
+        CancellationToken cancellationToken)
     {
-        group.MapPost("start", async (MonitoringRequest request, MonitorService monitorService, KeepTabsDbContext context,
-                CancellationToken cancellationToken) =>
-            {
-                var monitorResponse = monitorService.StartMonitoring(request, cancellationToken);
+        var response = await monitorService.CreateMonitorAsync(RequireUserId(currentUser), request, cancellationToken);
 
-                var monitor = new Monitor
-                {
-                    Id = monitorResponse.MonitorId,
-                    JobTitle = request.Title,
-                    JobUrl = request.Url,
-                    RequestInterval = request.Interval,
-                    ResponseStatuses = []
-                };
-
-                await context.Monitors.AddAsync(monitor, cancellationToken);
-                await context.SaveChangesAsync(cancellationToken);
-
-                return Results.AcceptedAtRoute(MonitoringJobStatus, new { monitorId = monitorResponse.MonitorId }, monitor);
-            })
-            .WithSummary("Start Monitoring")
-            .WithDescription("Endpoint to initiate a monitoring job");
-
-        return group;
+        return TypedResults.CreatedAtRoute(
+            response,
+            "GetMonitorById",
+            new { monitorId = response.MonitorId });
     }
 
-    private static IEndpointRouteBuilder MapCancelMonitoring(this IEndpointRouteBuilder group)
+    private static async Task<Ok<IReadOnlyList<GetMonitorResponse>>> GetMonitors(
+        IUser currentUser,
+        IMonitorService monitorService,
+        CancellationToken cancellationToken)
     {
-        group.MapPut("{monitorId}/cancel", async (string monitorId, MonitorService monitorService, KeepTabsDbContext context,
-                CancellationToken cancellationToken) =>
-            {
-                monitorService.CancelMonitoring(monitorId);
+        var monitors = await monitorService.GetMonitorsAsync(RequireUserId(currentUser), cancellationToken);
 
-                var monitor = await context.Monitors
-                    .Include(x => x.ResponseStatuses)
-                    .FirstOrDefaultAsync(x => x.Id == monitorId, cancellationToken: cancellationToken);
-
-                if (monitor is null)
-                {
-                    return Results.NotFound("Job ID Is Invalid. No Monitor Found!");
-                }
-
-                var responseStatus = new ResponseStatus
-                {
-                    Id = Guid.NewGuid(),
-                    RunningState = RunningState.Down,
-                    MonitorId = monitor.Id,
-                };
-
-                await context.ResponseStatuses.AddAsync(responseStatus, cancellationToken);
-                await context.SaveChangesAsync(cancellationToken);
-
-                return Results.Ok($"Successfully cancelled job with ID {monitorId}");
-            })
-            .WithSummary("Cancel Monitoring")
-            .WithDescription("Endpoint to cancel an existing monitoring job");
-
-        return group;
+        return TypedResults.Ok(monitors);
     }
 
-    private static IEndpointRouteBuilder MapCheckMonitoringStatus(this IEndpointRouteBuilder group)
+    private static async Task<Results<Ok<GetMonitorResponse>, ProblemHttpResult>> GetMonitorById(
+        Guid monitorId,
+        IUser currentUser,
+        IMonitorService monitorService,
+        CancellationToken cancellationToken)
     {
-        group.MapGet("{monitorId}/status", async (string monitorId, KeepTabsDbContext context,
-                CancellationToken cancellationToken) =>
-            {
-                var monitor = await context.Monitors
-                    .Include(x => x.ResponseStatuses)
-                    .FirstOrDefaultAsync(x => x.Id == monitorId, cancellationToken);
+        var monitor = await monitorService.GetMonitorByIdAsync(RequireUserId(currentUser), monitorId, cancellationToken);
 
-                if (monitor is null)
-                {
-                    return Results.NotFound("Job ID Is Invalid. No Monitor Found!");
-                }
-
-                return Results.Ok(monitor);
-            })
-            .WithName(MonitoringJobStatus)
-            .WithSummary("Check Monitoring Status")
-            .WithDescription("Endpoint to check status of existing job");
-
-        return group;
+        return monitor is null
+            ? MonitorNotFound()
+            : TypedResults.Ok(monitor);
     }
 
-    private static IEndpointRouteBuilder MapGetMonitoringHistory(this IEndpointRouteBuilder group)
+    private static async Task<Results<Ok<GetMonitorResponse>, ProblemHttpResult, ValidationProblem>> UpdateMonitor(
+        Guid monitorId,
+        UpdateMonitorRequest request,
+        IUser currentUser,
+        IMonitorService monitorService,
+        CancellationToken cancellationToken)
     {
-        group.MapGet("{monitorId}/history", async (string monitorId, KeepTabsDbContext context,
-                CancellationToken cancellationToken) =>
-            {
-                var responseStatuses = await context.ResponseStatuses
-                    .Where(x => x.MonitorId == monitorId)
-                    .ToListAsync(cancellationToken);
+        var monitor = await monitorService.UpdateMonitorAsync(RequireUserId(currentUser), monitorId, request, cancellationToken);
 
-                return Results.Ok(responseStatuses);
-            })
-            .WithSummary("Check Monitoring History")
-            .WithDescription("Endpoint to check history of existing job");
-
-        return group;
+        return monitor is null
+            ? MonitorNotFound()
+            : TypedResults.Ok(monitor);
     }
 
-    private static IEndpointRouteBuilder MapGetMonitoringEntries(this IEndpointRouteBuilder group)
+    private static async Task<Results<NoContent, ProblemHttpResult>> DeleteMonitor(
+        Guid monitorId,
+        IUser currentUser,
+        IMonitorService monitorService,
+        CancellationToken cancellationToken)
     {
-        group.MapGet("/", async (KeepTabsDbContext context, CancellationToken cancellationToken) =>
-            {
-                var monitors = await context.Monitors
-                    .AsNoTracking()
-                    .ToListAsync(cancellationToken);
+        var deleted = await monitorService.DeleteMonitorAsync(RequireUserId(currentUser), monitorId, cancellationToken);
 
-                return Results.Ok(monitors);
-            })
-            .WithSummary("Get Monitoring Entries")
-            .WithDescription("Endpoint to get all monitoring entries");
+        return deleted
+            ? TypedResults.NoContent()
+            : MonitorNotFound();
+    }
 
-        return group;
+    private static async Task<Results<Ok<GetMonitorResponse>, ProblemHttpResult>> PauseMonitor(
+        Guid monitorId,
+        IUser currentUser,
+        IMonitorService monitorService,
+        CancellationToken cancellationToken)
+    {
+        var monitor = await monitorService.SetPausedAsync(RequireUserId(currentUser), monitorId, true, cancellationToken);
+
+        return monitor is null
+            ? MonitorNotFound()
+            : TypedResults.Ok(monitor);
+    }
+
+    private static async Task<Results<Ok<GetMonitorResponse>, ProblemHttpResult>> ResumeMonitor(
+        Guid monitorId,
+        IUser currentUser,
+        IMonitorService monitorService,
+        CancellationToken cancellationToken)
+    {
+        var monitor = await monitorService.SetPausedAsync(RequireUserId(currentUser), monitorId, false, cancellationToken);
+
+        return monitor is null
+            ? MonitorNotFound()
+            : TypedResults.Ok(monitor);
+    }
+
+    private static async Task<Results<Ok<MonitorSummaryResponse>, ProblemHttpResult>> GetSummary(
+        Guid monitorId,
+        IUser currentUser,
+        IMonitorService monitorService,
+        CancellationToken cancellationToken)
+    {
+        var summary = await monitorService.GetSummaryAsync(RequireUserId(currentUser), monitorId, cancellationToken);
+
+        return summary is null
+            ? MonitorNotFound()
+            : TypedResults.Ok(summary);
+    }
+
+    private static async Task<Results<Ok<IReadOnlyList<MonitorCheckHistoryItem>>, ProblemHttpResult>> GetHistory(
+        Guid monitorId,
+        IUser currentUser,
+        IMonitorService monitorService,
+        int? days,
+        CancellationToken cancellationToken)
+    {
+        var userId = RequireUserId(currentUser);
+        var monitor = await monitorService.GetMonitorByIdAsync(userId, monitorId, cancellationToken);
+        if (monitor is null)
+        {
+            return MonitorNotFound();
+        }
+
+        var history = await monitorService.GetHistoryAsync(userId, monitorId, days ?? 30, cancellationToken);
+
+        return TypedResults.Ok(history);
+    }
+
+    private static string RequireUserId(IUser currentUser)
+    {
+        return currentUser.Id ?? throw new UnauthorizedAccessException();
+    }
+
+    private static ProblemHttpResult MonitorNotFound()
+    {
+        return TypedResults.Problem(
+            statusCode: StatusCodes.Status404NotFound,
+            title: "Not found.",
+            detail: "The requested monitor was not found.");
     }
 }

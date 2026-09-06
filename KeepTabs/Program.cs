@@ -1,52 +1,49 @@
-using System.Text.Json.Serialization;
-using Hangfire;
-using KeepTabs.Database;
+using KeepTabs.Application;
 using KeepTabs.EndPoints;
 using KeepTabs.Extensions;
-using KeepTabs.Jobs;
-using KeepTabs.Services;
+using KeepTabs.Infrastructure;
 using ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
-builder.AddNpgsqlDbContext<KeepTabsDbContext>("keeptabsdb");
-
+builder.AddKeepTabsPersistence();
 builder.Host.ConfigureSerilog();
-
-builder.Services.ConfigureHttpJsonOptions(options =>
-{
-    options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-});
-builder.Services.AddOpenApi();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.ConfigureSwagger();
-builder.Services.ConfigureHangfire();
-builder.Services.ConfigureApiVersioning();
-builder.Services.ConfigureForwardedHeadersOptions();
-builder.Services.AddTransient<MonitorService>();
-builder.Services.AddHttpClient();
+builder.Services.AddWebServices(builder.Configuration);
+builder.Services.AddInfrastructureServices();
+builder.Services.AddApplicationServices();
 
 var app = builder.Build();
 
-app.ApplyMigrations();
-
+app.UseForwardedHeaders();
+app.UseExceptionHandler();
+app.UseStatusCodePages();
 app.UseHttpsRedirection();
+app.UseDefaultFiles();
+app.UseStaticFiles();
+app.UseCors(CorsPolicies.Frontend);
+app.UseAuthentication();
+app.UseAuthorization();
 app.SetupHangfireDashboard();
-app.SetupScalarDocs();
 app.SetupSwaggerDocs();
 
-app.MapGet("/", () => Results.Ok("Hello world"))
-    .WithSummary("Greetings")
-    .WithDescription("""Returns a "Hello world" message""")
-    .WithTags("KeepTabs");
+await app.ApplyMigrationsAsync();
 
-app.MapMonitorEndpoints();
+var apiGroup = app.MapGroup("api");
+
+apiGroup.MapGet("/", () => TypedResults.Ok("Hello world"))
+    .ExcludeFromDescription();
+
+apiGroup.MapUserEndpoints();
+apiGroup.MapMonitorEndpoints();
+
+// Unknown /api/* routes stay JSON 404s instead of falling through to the SPA.
+apiGroup.Map("{*path}", () => TypedResults.NotFound())
+    .ExcludeFromDescription();
 
 app.MapDefaultEndpoints();
 
-var manager = app.Services.CreateAsyncScope()
-    .ServiceProvider.GetRequiredService<IRecurringJobManager>();
-manager.AddOrUpdate<JobHistoryCleaner>("CleanUp", x => x.CleanUp(CancellationToken.None), Cron.Daily);
+// Serves the Vite SPA from wwwroot; client-side routes fall back to index.html.
+app.MapFallbackToFile("index.html");
 
 await app.RunAsync();

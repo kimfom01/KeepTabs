@@ -1,23 +1,66 @@
 ﻿services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: keeptabs
+      POSTGRES_USER: keeptabs
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your .env file}
+    volumes:
+      - keeptabs-postgres-data:/var/lib/postgresql/data
+    networks:
+      - keeptabs-network
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: keeptabs
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?Set RABBITMQ_DEFAULT_PASS in your .env file}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - keeptabs-rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - keeptabs-network
+
   keeptabs:
+    image: keeptabs
     build:
       context: .
-    restart: unless-stopped
-    ports:
-      - "7070:8080"
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__keeptabsdb: Host=postgres;Port=5432;Database=keeptabs;Username=keeptabs;Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your .env file}
+      Jwt__Key: ${JWT_KEY:?Set JWT_KEY to at least 32 characters in your .env file}
+      Jwt__Issuer: ${JWT_ISSUER:-KeepTabs}
+      Jwt__Audience: ${JWT_AUDIENCE:-KeepTabs}
+      Jwt__ExpiryMinutes: ${JWT_EXPIRY_MINUTES:-60}
     networks:
       - keeptabs-network
-  database:
-    image: mongo
-    restart: unless-stopped
     ports:
-      - "27017:27017"
+      - "8080:8080"
+
+  keeptabs.worker:
+    image: keeptabs.worker
+    build:
+      context: .
+      dockerfile: Dockerfile.Worker
+    depends_on:
+      - postgres
+      - rabbitmq
+      - keeptabs
+    environment:
+      DOTNET_ENVIRONMENT: Production
+      ConnectionStrings__keeptabsdb: Host=postgres;Port=5432;Database=keeptabs;Username=keeptabs;Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your .env file}
     networks:
       - keeptabs-network
-    volumes:
-      - mongo_data:/data/db
 
 networks:
   keeptabs-network:
+
 volumes:
-  mongo_data:
+  keeptabs-postgres-data:
+  keeptabs-rabbitmq-data:

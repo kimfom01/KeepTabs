@@ -4,8 +4,8 @@ namespace KeepTabs.Extensions;
 
 public static class BuilderExtensions
 {
-    public static void ConfigureSerilog(this IHostBuilder hostBuilder)
+    public static void ConfigureSerilog(this IHostBuilder builder)
     {
-        hostBuilder.UseSerilog((context, loggerConfig) => { loggerConfig.ReadFrom.Configuration(context.Configuration); });
+        builder.UseSerilog((context, loggerConfig) => { loggerConfig.ReadFrom.Configuration(context.Configuration); });
     }
 }
