@@ -4,6 +4,7 @@ import { ArrowLeftIcon, PauseIcon, PencilIcon, PlayIcon, Trash2Icon } from "luci
 import { toast } from "sonner";
 import { AppHeader } from "@/components/app-header";
 import { MonitorFormDialog } from "@/components/monitor-form-dialog";
+import { ResponseChart } from "@/components/response-chart";
 import { StatusLabel, monitorState } from "@/components/status-dot";
 import {
   AlertDialog,
@@ -212,6 +213,23 @@ export function MonitorDetailPage() {
                 </CardContent>
               </Card>
             </div>
+
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Response time</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {history === null ? (
+                  <Skeleton className="h-[220px] w-full" />
+                ) : history.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No checks recorded in the last 7 days yet.
+                  </p>
+                ) : (
+                  <ResponseChart checks={history} />
+                )}
+              </CardContent>
+            </Card>
 
             <Card className="mt-6">
               <CardHeader>

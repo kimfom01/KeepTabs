@@ -13,7 +13,7 @@ Tailwind CSS v4 + shadcn, Aspire orchestration, Docker Compose.
 
 ---
 
-## v0.1.0 — Core MVP ✅ (nearly complete)
+## v0.1.0 — Core MVP ✅ (complete)
 
 Goal: basic uptime monitoring via HTTP + core UI + worker.
 
@@ -47,7 +47,7 @@ Goal: basic uptime monitoring via HTTP + core UI + worker.
 - [x] Login/register + token session, auth-guarded routes
 - [x] Dashboard (monitor list, status, protocol badges)
 - [x] Create/edit monitor dialog, monitor detail view, API-keys page
-- [ ] History chart (detail view currently shows a history **table** only)
+- [x] History chart (response-time area chart on the detail view, plus history table)
 
 ### DevOps ✅
 - [x] `docker-compose.yaml` (postgres, rabbitmq, api, worker) + `.env` secrets
@@ -61,8 +61,8 @@ Goal: basic uptime monitoring via HTTP + core UI + worker.
 - [x] Regression tests for the worker check-save bug
 
 ### Notes / deviations from the old sketch
-- Hangfire server + dashboard are wired in the API, but **no jobs are enqueued** —
-  scheduling lives in the Quartz worker. Decide: use Hangfire or remove it.
+- Hangfire was removed entirely (server, dashboard, packages): scheduling lives
+  in the Quartz worker, and nothing ever enqueued Hangfire jobs.
 - RabbitMQ is provisioned (compose + Aspire references) but **no messaging code
   exists yet**. It is the intended transport for worker fan-out / alerts.
 - `AlertRule` / `AlertLog` entities exist in the data model only — no endpoints,

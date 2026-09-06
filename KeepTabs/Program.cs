@@ -24,7 +24,6 @@ app.UseStaticFiles();
 app.UseCors(CorsPolicies.Frontend);
 app.UseAuthentication();
 app.UseAuthorization();
-app.SetupHangfireDashboard();
 app.SetupSwaggerDocs();
 
 await app.ApplyMigrationsAsync();
