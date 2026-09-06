@@ -77,7 +77,24 @@ public sealed class MonitorCheckRunner : IMonitorCheckRunner
         }
 
         var completed = await RunCheckAsync(monitor, cancellationToken);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex)
+        {
+            // The monitor was modified or deleted by another process (an API request
+            // or a second worker instance) after it was loaded, so the check result
+            // can no longer be persisted. Drop it instead of failing the job; the
+            // next scan observes the current state.
+            _logger.LogWarning(
+                ex,
+                "Monitor check for monitor {MonitorId} was not persisted because the monitor changed concurrently.",
+                monitorId);
+
+            return false;
+        }
 
         return completed;
     }
@@ -88,7 +105,8 @@ public sealed class MonitorCheckRunner : IMonitorCheckRunner
         if (probe is null)
         {
             _logger.LogError("No probe is registered for protocol {Protocol} on monitor {MonitorId}.", monitor.Protocol, monitor.Id);
-            monitor.RecordProbeResult(false, null, 0, $"Unsupported protocol: {monitor.Protocol}.", _timeProvider.GetUtcNow());
+            var unsupported = monitor.RecordProbeResult(false, null, 0, $"Unsupported protocol: {monitor.Protocol}.", _timeProvider.GetUtcNow());
+            _dbContext.MonitorChecks.Add(unsupported);
 
             return false;
         }
@@ -96,12 +114,13 @@ public sealed class MonitorCheckRunner : IMonitorCheckRunner
         try
         {
             var result = await probe.CheckAsync(monitor, cancellationToken);
-            monitor.RecordProbeResult(
+            var check = monitor.RecordProbeResult(
                 result.IsUp,
                 result.StatusCode,
                 result.ResponseTimeMs,
                 Truncate(result.ErrorMessage),
                 _timeProvider.GetUtcNow());
+            _dbContext.MonitorChecks.Add(check);
 
             return true;
         }
