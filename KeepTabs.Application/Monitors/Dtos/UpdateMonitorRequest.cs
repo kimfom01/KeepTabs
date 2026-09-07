@@ -8,4 +8,5 @@ public sealed record UpdateMonitorRequest(
     int? CheckIntervalSeconds,
     int? TimeoutSeconds,
     int? ExpectedStatusCode,
-    bool? IsPaused);
+    bool? IsPaused,
+    bool? UseHeadRequest = null);

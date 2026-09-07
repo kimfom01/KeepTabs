@@ -1,5 +1,3 @@
-using KeepTabs.Application.Users.Dtos;
-
 namespace KeepTabs.Application.Users;
 
 /// <summary>

@@ -19,7 +19,7 @@ public sealed class HttpMonitorProbe : IMonitorProbe
         _logger = logger;
     }
 
-    public bool CanHandle(Domain.ProtocolType protocol) => protocol == Domain.ProtocolType.Http;
+    public bool CanHandle(ProtocolType protocol) => protocol == ProtocolType.Http;
 
     public async Task<MonitorProbeResult> CheckAsync(Domain.Monitor monitor, CancellationToken cancellationToken = default)
     {
@@ -27,10 +27,12 @@ public sealed class HttpMonitorProbe : IMonitorProbe
         using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeoutSource.CancelAfter(TimeSpan.FromSeconds(monitor.TimeoutSeconds));
         var elapsed = Stopwatch.StartNew();
+        var method = monitor.UseHeadRequest ? HttpMethod.Head : HttpMethod.Get;
+        var httpsAuthority = HttpsAuthority(monitor.Url);
 
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, monitor.Url);
+            using var request = new HttpRequestMessage(method, monitor.Url);
             using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeoutSource.Token);
             elapsed.Stop();
 
@@ -42,22 +44,45 @@ public sealed class HttpMonitorProbe : IMonitorProbe
                 ? null
                 : $"Expected status {monitor.ExpectedStatusCode.Value}, but received {statusCode}.";
 
-            return new MonitorProbeResult(isUp, statusCode, ElapsedMilliseconds(elapsed), error);
+            return new MonitorProbeResult(
+                isUp, statusCode, ElapsedMilliseconds(elapsed), error,
+                await SslDaysRemainingAsync(httpsAuthority, cancellationToken));
         }
         catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
             elapsed.Stop();
             _logger.LogWarning(ex, "HTTP check timed out for monitor {MonitorId}.", monitor.Id);
 
-            return new MonitorProbeResult(false, null, ElapsedMilliseconds(elapsed), $"Request timed out after {monitor.TimeoutSeconds} seconds.");
+            return new MonitorProbeResult(false, null, ElapsedMilliseconds(elapsed), $"Request timed out after {monitor.TimeoutSeconds} seconds.", await SslDaysRemainingAsync(httpsAuthority, cancellationToken));
         }
         catch (HttpRequestException ex)
         {
             elapsed.Stop();
             _logger.LogWarning(ex, "HTTP check failed for monitor {MonitorId}.", monitor.Id);
 
-            return new MonitorProbeResult(false, null, ElapsedMilliseconds(elapsed), ex.Message);
+            return new MonitorProbeResult(false, null, ElapsedMilliseconds(elapsed), ex.Message, await SslDaysRemainingAsync(httpsAuthority, cancellationToken));
         }
+    }
+
+    private static (string Host, int Port)? HttpsAuthority(string url)
+    {
+        if (Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps)
+        {
+            return (uri.DnsSafeHost, uri.Port);
+        }
+
+        return null;
+    }
+
+    private static async Task<int?> SslDaysRemainingAsync(
+        (string Host, int Port)? authority, CancellationToken cancellationToken)
+    {
+        if (authority is not { } endpoint)
+        {
+            return null;
+        }
+
+        return await CertificateExpiryReader.GetDaysRemainingAsync(endpoint.Host, endpoint.Port, cancellationToken);
     }
 
     private static int ElapsedMilliseconds(Stopwatch elapsed)

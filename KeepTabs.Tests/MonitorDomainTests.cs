@@ -49,7 +49,7 @@ public sealed class MonitorDomainTests
             IsPaused = false,
         };
 
-        monitor.ApplyUpdate("New", "example.com:443", ProtocolType.Tcp, 120, 20, null, true);
+        monitor.ApplyUpdate("New", "example.com:443", ProtocolType.Tcp, 120, 20, null, false, true);
 
         Assert.Equal("New", monitor.Name);
         Assert.Equal("example.com:443", monitor.Url);
@@ -57,6 +57,7 @@ public sealed class MonitorDomainTests
         Assert.Equal(120, monitor.CheckIntervalSeconds);
         Assert.Equal(20, monitor.TimeoutSeconds);
         Assert.Null(monitor.ExpectedStatusCode);
+        Assert.False(monitor.UseHeadRequest);
         Assert.True(monitor.IsPaused);
     }
 
@@ -71,9 +72,10 @@ public sealed class MonitorDomainTests
             IsPaused = true,
         };
 
-        monitor.ApplyUpdate("Site", "https://example.com", ProtocolType.Http, 60, 10, 200, null);
+        monitor.ApplyUpdate("Site", "https://example.com", ProtocolType.Http, 60, 10, 200, true, null);
 
         Assert.True(monitor.IsPaused);
+        Assert.True(monitor.UseHeadRequest);
     }
 
     [Fact]

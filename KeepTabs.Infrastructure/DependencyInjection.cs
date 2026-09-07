@@ -1,12 +1,12 @@
 using System.Reflection;
 using KeepTabs.Application.Common.Interfaces;
 using KeepTabs.Application.Users;
+using KeepTabs.Infrastructure.Alerts;
 using KeepTabs.Infrastructure.Database;
 using KeepTabs.Infrastructure.Database.Interceptors;
 using KeepTabs.Infrastructure.Identity;
 using KeepTabs.Infrastructure.Monitoring;
 using KeepTabs.Infrastructure.Security;
-using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,11 +39,24 @@ public static class DependencyInjection
         {
             client.Timeout = Timeout.InfiniteTimeSpan;
         });
+        services.AddAlertServices();
 
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
             cfg.RegisterServicesFromAssembly(typeof(IApplicationDbContext).Assembly);
+        });
+    }
+
+    public static void AddAlertServices(this IServiceCollection services)
+    {
+        services.AddScoped<Application.Alerts.IAlertDispatcher, AlertDispatcher>();
+        services.AddTransient<Application.Alerts.IAlertChannel, EmailAlertChannel>();
+        services.AddTransient<Application.Alerts.IAlertChannel, WebhookAlertChannel>();
+        services.AddTransient<Application.Alerts.IAlertChannel, TelegramAlertChannel>();
+        services.AddHttpClient(WebhookAlertChannel.HttpClientName, client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(15);
         });
     }
 

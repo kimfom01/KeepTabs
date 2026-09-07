@@ -19,7 +19,8 @@ public static class MonitorMappings
             Protocol = request.Protocol,
             CheckIntervalSeconds = request.CheckIntervalSeconds,
             TimeoutSeconds = request.TimeoutSeconds,
-            ExpectedStatusCode = request.ExpectedStatusCode
+            ExpectedStatusCode = request.ExpectedStatusCode,
+            UseHeadRequest = request.UseHeadRequest
         };
     }
 
@@ -34,6 +35,7 @@ public static class MonitorMappings
             monitor.CheckIntervalSeconds,
             monitor.TimeoutSeconds,
             monitor.ExpectedStatusCode,
+            monitor.UseHeadRequest,
             monitor.IsPaused,
             monitor.LastCheckedAt,
             monitor.LastStatusUp

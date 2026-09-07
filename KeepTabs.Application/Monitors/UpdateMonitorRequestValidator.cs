@@ -1,6 +1,5 @@
 using FluentValidation;
 using KeepTabs.Application.Monitors.Dtos;
-using KeepTabs.Domain;
 
 namespace KeepTabs.Application.Monitors;
 

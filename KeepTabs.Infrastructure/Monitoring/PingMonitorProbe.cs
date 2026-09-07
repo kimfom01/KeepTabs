@@ -18,7 +18,7 @@ public sealed class PingMonitorProbe : IMonitorProbe
         _logger = logger;
     }
 
-    public bool CanHandle(Domain.ProtocolType protocol) => protocol == Domain.ProtocolType.Ping;
+    public bool CanHandle(ProtocolType protocol) => protocol == ProtocolType.Ping;
 
     public async Task<MonitorProbeResult> CheckAsync(Domain.Monitor monitor, CancellationToken cancellationToken = default)
     {

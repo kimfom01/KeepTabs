@@ -140,6 +140,33 @@ public sealed class MonitorServiceTests(PostgresFixture database)
     }
 
     [Fact]
+    public async Task CreatePersistsHeadOptionAndUpdateMergesIt()
+    {
+        var (provider, users) = await CreateServicesAsync("user-1");
+        await using var _ = provider;
+
+        Guid id = Guid.Empty;
+        await UseScopeAsync(provider, async (db, store) =>
+        {
+            var created = await CreateService(db, store).CreateMonitorAsync(
+                "user-1",
+                new CreateMonitorRequest("Site", "https://example.com", ProtocolType.Http, 60, 10, 200, true));
+            id = created.MonitorId;
+
+            Assert.True(created.UseHeadRequest);
+        }, users);
+
+        await UseScopeAsync(provider, async (db, store) =>
+        {
+            var updated = await CreateService(db, store).UpdateMonitorAsync(
+                "user-1", id, new UpdateMonitorRequest(null, null, null, null, null, null, null, false));
+
+            Assert.NotNull(updated);
+            Assert.False(updated.UseHeadRequest);
+        }, users);
+    }
+
+    [Fact]
     public async Task GetByIdHonorsOwnership()
     {
         var (provider, users) = await CreateServicesAsync("user-1", "user-2");

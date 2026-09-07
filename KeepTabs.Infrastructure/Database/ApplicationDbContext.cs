@@ -13,6 +13,7 @@ public sealed class ApplicationDbContext : IdentityDbContext<ApplicationUser>, I
 {
     public DbSet<AlertLog> AlertLogs => Set<AlertLog>();
     public DbSet<AlertRule> AlertRules => Set<AlertRule>();
+    public DbSet<AppSetting> AppSettings => Set<AppSetting>();
     public DbSet<Monitor> Monitors => Set<Monitor>();
     public DbSet<MonitorCheck> MonitorChecks => Set<MonitorCheck>();
 

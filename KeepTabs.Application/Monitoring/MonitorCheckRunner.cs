@@ -1,3 +1,4 @@
+using KeepTabs.Application.Alerts;
 using KeepTabs.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -6,7 +7,8 @@ using DomainMonitor = KeepTabs.Domain.Monitor;
 namespace KeepTabs.Application.Monitoring;
 
 /// <summary>
-/// Loads due monitors, executes protocol probes, and persists check results in one unit of work.
+/// Loads due monitors, executes protocol probes, evaluates alert rules, and
+/// persists check results in one unit of work.
 /// </summary>
 public sealed class MonitorCheckRunner : IMonitorCheckRunner
 {
@@ -15,17 +17,20 @@ public sealed class MonitorCheckRunner : IMonitorCheckRunner
 
     private readonly IApplicationDbContext _dbContext;
     private readonly IEnumerable<IMonitorProbe> _probes;
+    private readonly IAlertEvaluator _alerts;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<MonitorCheckRunner> _logger;
 
     public MonitorCheckRunner(
         IApplicationDbContext dbContext,
         IEnumerable<IMonitorProbe> probes,
+        IAlertEvaluator alerts,
         TimeProvider timeProvider,
         ILogger<MonitorCheckRunner> logger)
     {
         _dbContext = dbContext;
         _probes = probes;
+        _alerts = alerts;
         _timeProvider = timeProvider;
         _logger = logger;
     }
@@ -57,10 +62,13 @@ public sealed class MonitorCheckRunner : IMonitorCheckRunner
 
         foreach (var monitor in monitors)
         {
+            var previousStatusUp = monitor.LastStatusUp;
             if (await RunCheckAsync(monitor, cancellationToken))
             {
                 completed++;
             }
+
+            await _alerts.EvaluateAsync(monitor, previousStatusUp, monitor.LastStatusUp is true, cancellationToken);
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -76,7 +84,9 @@ public sealed class MonitorCheckRunner : IMonitorCheckRunner
             return false;
         }
 
+        var previousStatusUp = monitor.LastStatusUp;
         var completed = await RunCheckAsync(monitor, cancellationToken);
+        await _alerts.EvaluateAsync(monitor, previousStatusUp, monitor.LastStatusUp is true, cancellationToken);
 
         try
         {
@@ -119,7 +129,8 @@ public sealed class MonitorCheckRunner : IMonitorCheckRunner
                 result.StatusCode,
                 result.ResponseTimeMs,
                 Truncate(result.ErrorMessage),
-                _timeProvider.GetUtcNow());
+                _timeProvider.GetUtcNow(),
+                result.SslDaysRemaining);
             _dbContext.MonitorChecks.Add(check);
 
             return true;
@@ -131,7 +142,8 @@ public sealed class MonitorCheckRunner : IMonitorCheckRunner
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Monitor check failed for monitor {MonitorId}.", monitor.Id);
-            monitor.RecordProbeResult(false, null, 0, Truncate(ex.Message), _timeProvider.GetUtcNow());
+            var failed = monitor.RecordProbeResult(false, null, 0, Truncate(ex.Message), _timeProvider.GetUtcNow());
+            _dbContext.MonitorChecks.Add(failed);
 
             return false;
         }

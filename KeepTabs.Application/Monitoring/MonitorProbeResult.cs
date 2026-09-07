@@ -7,4 +7,5 @@ public sealed record MonitorProbeResult(
     bool IsUp,
     int? StatusCode,
     int ResponseTimeMs,
-    string? ErrorMessage);
+    string? ErrorMessage,
+    int? SslDaysRemaining = null);

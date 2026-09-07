@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using KeepTabs.Application.Monitoring;
-using KeepTabs.Domain;
 using Microsoft.Extensions.Logging;
 
 namespace KeepTabs.Infrastructure.Monitoring;
@@ -23,7 +22,7 @@ public sealed class TcpMonitorProbe : IMonitorProbe
 
     public async Task<MonitorProbeResult> CheckAsync(Domain.Monitor monitor, CancellationToken cancellationToken = default)
     {
-        if (!Application.Monitoring.TcpEndpoint.TryParse(monitor.Url, out var endpoint) || endpoint is null)
+        if (!TcpEndpoint.TryParse(monitor.Url, out var endpoint) || endpoint is null)
         {
             return new MonitorProbeResult(false, null, 0, "TCP monitors require an endpoint in host:port format.");
         }

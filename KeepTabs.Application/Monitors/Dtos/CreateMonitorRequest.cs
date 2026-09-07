@@ -7,4 +7,5 @@ public sealed record CreateMonitorRequest(
     Domain.ProtocolType Protocol,
     int CheckIntervalSeconds,
     int TimeoutSeconds,
-    int? ExpectedStatusCode);
+    int? ExpectedStatusCode,
+    bool UseHeadRequest = false);

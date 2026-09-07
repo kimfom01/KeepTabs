@@ -7,4 +7,5 @@ public sealed record MonitorCheckHistoryItem(
     bool IsUp,
     int? StatusCode,
     int ResponseTimeMs,
-    string? ErrorMessage);
+    string? ErrorMessage,
+    int? SslDaysRemaining);

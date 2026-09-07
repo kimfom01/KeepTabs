@@ -12,4 +12,5 @@ public class MonitorCheck : BaseAuditableEntity
     public int? StatusCode { get; set; }
     public int ResponseTimeMs { get; set; }
     public string? ErrorMessage { get; set; }
+    public int? SslDaysRemaining { get; set; }
 }

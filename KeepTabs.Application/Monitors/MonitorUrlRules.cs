@@ -1,5 +1,3 @@
-using System;
-
 namespace KeepTabs.Application.Monitors;
 
 /// <summary>

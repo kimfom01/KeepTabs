@@ -89,6 +89,7 @@ public sealed class MonitorService : IMonitorService
                 monitor.CheckIntervalSeconds,
                 monitor.TimeoutSeconds,
                 monitor.ExpectedStatusCode,
+                monitor.UseHeadRequest,
                 monitor.IsPaused,
                 monitor.LastCheckedAt,
                 monitor.LastStatusUp))
@@ -113,7 +114,8 @@ public sealed class MonitorService : IMonitorService
             && request.CheckIntervalSeconds is null
             && request.TimeoutSeconds is null
             && request.ExpectedStatusCode is null
-            && request.IsPaused is null)
+            && request.IsPaused is null
+            && request.UseHeadRequest is null)
         {
             throw new ValidationException([new FluentValidation.Results.ValidationFailure("request", "At least one monitor field must be supplied.")]);
         }
@@ -124,7 +126,8 @@ public sealed class MonitorService : IMonitorService
             request.Protocol ?? monitor.Protocol,
             request.CheckIntervalSeconds ?? monitor.CheckIntervalSeconds,
             request.TimeoutSeconds ?? monitor.TimeoutSeconds,
-            request.ExpectedStatusCode ?? monitor.ExpectedStatusCode);
+            request.ExpectedStatusCode ?? monitor.ExpectedStatusCode,
+            request.UseHeadRequest ?? monitor.UseHeadRequest);
         var validation = await _createValidator.ValidateAsync(effectiveRequest, cancellationToken);
         if (!validation.IsValid)
         {
@@ -146,6 +149,7 @@ public sealed class MonitorService : IMonitorService
             effectiveRequest.CheckIntervalSeconds,
             effectiveRequest.TimeoutSeconds,
             effectiveRequest.ExpectedStatusCode,
+            effectiveRequest.UseHeadRequest,
             request.IsPaused);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -259,7 +263,8 @@ public sealed class MonitorService : IMonitorService
                 check.IsUp,
                 check.StatusCode,
                 check.ResponseTimeMs,
-                check.ErrorMessage))
+                check.ErrorMessage,
+                check.SslDaysRemaining))
             .ToListAsync(cancellationToken);
     }
 
