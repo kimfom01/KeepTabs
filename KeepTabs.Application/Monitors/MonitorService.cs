@@ -4,6 +4,7 @@ using KeepTabs.Application.Monitors.Dtos;
 using KeepTabs.Application.Users;
 using KeepTabs.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using DomainMonitor = KeepTabs.Domain.Monitor;
 
 namespace KeepTabs.Application.Monitors;
@@ -15,22 +16,27 @@ public sealed class MonitorService : IMonitorService
 {
     private const int MaxHistoryDays = 365;
     private const int MaxHistoryItems = 1_000;
+    private const int MaxDailyDays = 90;
+    private static readonly TimeSpan StatsCacheLifetime = TimeSpan.FromSeconds(60);
 
     private readonly IApplicationDbContext _dbContext;
     private readonly IUserAccountStore _userAccounts;
     private readonly IValidator<CreateMonitorRequest> _createValidator;
     private readonly TimeProvider _timeProvider;
+    private readonly IMemoryCache _cache;
 
     public MonitorService(
         IApplicationDbContext dbContext,
         IUserAccountStore userAccounts,
         IValidator<CreateMonitorRequest> createValidator,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider,
+        IMemoryCache cache)
     {
         _dbContext = dbContext;
         _userAccounts = userAccounts;
         _createValidator = createValidator;
         _timeProvider = timeProvider;
+        _cache = cache;
     }
 
     public async Task<GetMonitorResponse> CreateMonitorAsync(
@@ -196,6 +202,61 @@ public sealed class MonitorService : IMonitorService
         string userId,
         Guid monitorId,
         CancellationToken cancellationToken = default)
+    {
+        // Check results arrive continuously from the worker; a short TTL keeps
+        // the dashboard snappy without needing cross-process invalidation.
+        return await _cache.GetOrCreateAsync(
+            $"monitor-summary:{userId}:{monitorId}",
+            async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = StatsCacheLifetime;
+
+                return await LoadSummaryAsync(userId, monitorId, cancellationToken);
+            });
+    }
+
+    public async Task<IReadOnlyList<DailyUptimeItem>> GetDailyAsync(
+        string userId,
+        Guid monitorId,
+        int days,
+        CancellationToken cancellationToken = default)
+    {
+        var boundedDays = Math.Clamp(days, 1, MaxDailyDays);
+        var from = DateOnly.FromDateTime(_timeProvider.GetUtcNow().UtcDateTime).AddDays(-boundedDays);
+
+        return await _cache.GetOrCreateAsync(
+            $"monitor-daily:{userId}:{monitorId}:{boundedDays}",
+            async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = StatsCacheLifetime;
+
+                if (await FindOwnedAsync(userId, monitorId, cancellationToken, tracked: false) is null)
+                {
+                    return (IReadOnlyList<DailyUptimeItem>)[];
+                }
+
+                var rows = await _dbContext.DailyUptimeSummaries
+                    .AsNoTracking()
+                    .Where(summary => summary.MonitorId == monitorId && summary.Date > from)
+                    .OrderBy(summary => summary.Date)
+                    .ToListAsync(cancellationToken);
+
+                return rows.Select(summary => new DailyUptimeItem(
+                        summary.Date,
+                        summary.TotalChecks,
+                        summary.UpCount,
+                        summary.TotalChecks == 0
+                            ? 0
+                            : (double)summary.UpCount / summary.TotalChecks * 100,
+                        summary.AverageResponseTimeMs))
+                    .ToList();
+            }) ?? [];
+    }
+
+    private async Task<MonitorSummaryResponse?> LoadSummaryAsync(
+        string userId,
+        Guid monitorId,
+        CancellationToken cancellationToken)
     {
         var monitor = await FindOwnedAsync(userId, monitorId, cancellationToken, tracked: false);
         if (monitor is null)

@@ -1,12 +1,15 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { ThemeProvider, useTheme } from "@/lib/theme";
 import { AlertsPage } from "@/pages/alerts";
 import { ApiKeysPage } from "@/pages/api-keys";
 import { DocsPage } from "@/pages/docs";
 import { LandingPage } from "@/pages/landing";
+import { PublicStatusPageView } from "@/pages/public-status";
 import { SettingsPage } from "@/pages/settings";
+import { StatusPagesPage } from "@/pages/status-pages";
 import { DashboardPage } from "@/pages/dashboard";
 import { LoginPage } from "@/pages/login";
 import { MonitorDetailPage } from "@/pages/monitor-detail";
@@ -46,8 +49,9 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <ThemedToaster />
-        <BrowserRouter>
+        <TooltipProvider>
+          <ThemedToaster />
+          <BrowserRouter>
         <Routes>
           <Route
             path="/login"
@@ -107,9 +111,19 @@ export default function App() {
             }
           />
           <Route path="/docs" element={<DocsPage />} />
+          <Route path="/status/:slug" element={<PublicStatusPageView />} />
+          <Route
+            path="/status-pages"
+            element={
+              <RequireAuth>
+                <StatusPagesPage />
+              </RequireAuth>
+            }
+          />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>
+        </TooltipProvider>
       </AuthProvider>
     </ThemeProvider>
   );

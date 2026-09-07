@@ -36,6 +36,7 @@ apiGroup.MapGet("/", () => TypedResults.Ok("Hello world"))
 apiGroup.MapUserEndpoints();
 apiGroup.MapMonitorEndpoints();
 apiGroup.MapAlertEndpoints();
+apiGroup.MapStatusPageEndpoints();
 apiGroup.MapSettingsEndpoints();
 
 // Unknown /api/* routes stay JSON 404s instead of falling through to the SPA.

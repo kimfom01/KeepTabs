@@ -14,7 +14,11 @@ public sealed class ApplicationDbContext : IdentityDbContext<ApplicationUser>, I
     public DbSet<AlertLog> AlertLogs => Set<AlertLog>();
     public DbSet<AlertRule> AlertRules => Set<AlertRule>();
     public DbSet<AppSetting> AppSettings => Set<AppSetting>();
+    public DbSet<DailyUptimeSummary> DailyUptimeSummaries => Set<DailyUptimeSummary>();
+    public DbSet<HourlyUptimeSummary> HourlyUptimeSummaries => Set<HourlyUptimeSummary>();
     public DbSet<Monitor> Monitors => Set<Monitor>();
+    public DbSet<StatusPage> StatusPages => Set<StatusPage>();
+    public DbSet<StatusPageMonitor> StatusPageMonitors => Set<StatusPageMonitor>();
     public DbSet<MonitorCheck> MonitorChecks => Set<MonitorCheck>();
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)

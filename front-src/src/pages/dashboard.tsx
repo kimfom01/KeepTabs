@@ -18,6 +18,15 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,6 +59,8 @@ export function DashboardPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Monitor | null>(null);
   const [deleting, setDeleting] = useState<Monitor | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "up" | "down" | "paused">("all");
 
   const load = useCallback(async () => {
     try {
@@ -66,6 +77,23 @@ export function DashboardPage() {
   const up = monitors?.filter((m) => !m.isPaused && m.lastStatusUp === true).length ?? 0;
   const down = monitors?.filter((m) => !m.isPaused && m.lastStatusUp === false).length ?? 0;
   const paused = monitors?.filter((m) => m.isPaused).length ?? 0;
+
+  const visibleMonitors = (monitors ?? []).filter((monitor) => {
+    const needle = search.trim().toLowerCase();
+    if (needle && !`${monitor.name} ${monitor.url}`.toLowerCase().includes(needle)) {
+      return false;
+    }
+    switch (statusFilter) {
+      case "up":
+        return !monitor.isPaused && monitor.lastStatusUp === true;
+      case "down":
+        return !monitor.isPaused && monitor.lastStatusUp === false;
+      case "paused":
+        return monitor.isPaused;
+      default:
+        return true;
+    }
+  });
 
   function openCreate() {
     setEditing(null);
@@ -187,6 +215,41 @@ export function DashboardPage() {
                 </EmptyContent>
               </Empty>
             ) : (
+              <>
+                <div className="flex flex-wrap items-center gap-3 border-b px-6 py-3">
+                  <Input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Search monitors…"
+                    className="w-full sm:max-w-xs"
+                  />
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(value) =>
+                      setStatusFilter(value as "all" | "up" | "down" | "paused")
+                    }
+                  >
+                    <SelectTrigger className="w-36">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem value="all">All statuses</SelectItem>
+                        <SelectItem value="up">Up</SelectItem>
+                        <SelectItem value="down">Down</SelectItem>
+                        <SelectItem value="paused">Paused</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <span className="ml-auto text-sm text-muted-foreground">
+                    {visibleMonitors.length} of {monitors.length}
+                  </span>
+                </div>
+                {visibleMonitors.length === 0 ? (
+                  <p className="p-6 text-sm text-muted-foreground">
+                    No monitors match this search.
+                  </p>
+                ) : (
               <div className="overflow-x-auto">
                 <Table className="min-w-[680px]">
                 <TableHeader>
@@ -202,7 +265,7 @@ export function DashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {monitors.map((monitor) => {
+                  {visibleMonitors.map((monitor) => {
                     const state = monitorState(monitor.isPaused, monitor.lastStatusUp);
                     return (
                       <TableRow key={monitor.monitorId}>
@@ -281,6 +344,8 @@ export function DashboardPage() {
                 </TableBody>
                 </Table>
               </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>

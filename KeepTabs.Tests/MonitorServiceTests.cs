@@ -8,6 +8,7 @@ using KeepTabs.Infrastructure;
 using KeepTabs.Infrastructure.Database;
 using KeepTabs.Tests.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using DomainMonitor = KeepTabs.Domain.Monitor;
 
@@ -54,7 +55,7 @@ public sealed class MonitorServiceTests(PostgresFixture database)
     }
 
     private static MonitorService CreateService(ApplicationDbContext db, FakeUserStore users) =>
-        new(db, users, new CreateMonitorRequestValidator(), TimeProvider.System);
+        new(db, users, new CreateMonitorRequestValidator(), TimeProvider.System, new MemoryCache(new MemoryCacheOptions()));
 
     private static async Task UseScopeAsync(
         ServiceProvider provider, Func<ApplicationDbContext, FakeUserStore, Task> action, FakeUserStore users)
@@ -450,6 +451,73 @@ public sealed class MonitorServiceTests(PostgresFixture database)
             var year = await service.GetHistoryAsync("user-1", id, 100_000);
             var single = Assert.Single(year);
             Assert.Equal(10, single.ResponseTimeMs);
+        }, users);
+    }
+
+    [Fact]
+    public async Task DailyReturnsRowsAscendingWithMath()
+    {
+        var (provider, users) = await CreateServicesAsync("user-1", "user-2");
+        await using var _ = provider;
+
+        Guid id = Guid.Empty;
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        await UseScopeAsync(provider, async (db, _) =>
+        {
+            id = (await SeedMonitorAsync(db)).Id;
+            db.DailyUptimeSummaries.AddRange(
+                new DailyUptimeSummary
+                {
+                    MonitorId = id, Date = today.AddDays(-2),
+                    TotalChecks = 4, UpCount = 3, AverageResponseTimeMs = 100,
+                },
+                new DailyUptimeSummary
+                {
+                    MonitorId = id, Date = today.AddDays(-1),
+                    TotalChecks = 2, UpCount = 2, AverageResponseTimeMs = 50,
+                });
+            await db.SaveChangesAsync();
+        }, users);
+
+        await UseScopeAsync(provider, async (db, store) =>
+        {
+            var service = CreateService(db, store);
+            var items = await service.GetDailyAsync("user-1", id, 30);
+
+            Assert.Equal(2, items.Count);
+            Assert.True(items[0].Date < items[1].Date);
+            Assert.Equal(75, items[0].UptimePercentage);
+            Assert.Equal(100, items[0].AverageResponseTimeMs);
+            Assert.Empty(await service.GetDailyAsync("user-2", id, 30));
+            Assert.Empty(await service.GetDailyAsync("user-1", Guid.NewGuid(), 30));
+        }, users);
+    }
+
+    [Fact]
+    public async Task DailyWindowClamped()
+    {
+        var (provider, users) = await CreateServicesAsync("user-1");
+        await using var _ = provider;
+
+        Guid id = Guid.Empty;
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        await UseScopeAsync(provider, async (db, _) =>
+        {
+            id = (await SeedMonitorAsync(db)).Id;
+            db.DailyUptimeSummaries.Add(new DailyUptimeSummary
+            {
+                MonitorId = id, Date = today.AddDays(-2),
+                TotalChecks = 1, UpCount = 1, AverageResponseTimeMs = 10,
+            });
+            await db.SaveChangesAsync();
+        }, users);
+
+        await UseScopeAsync(provider, async (db, store) =>
+        {
+            var service = CreateService(db, store);
+
+            // days=0 clamps to a single day, excluding the 2-day-old row.
+            Assert.Empty(await service.GetDailyAsync("user-1", id, 0));
         }, users);
     }
 

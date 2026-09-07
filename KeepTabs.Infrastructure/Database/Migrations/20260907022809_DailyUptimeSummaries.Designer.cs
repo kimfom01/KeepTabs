@@ -3,17 +3,20 @@ using System;
 using KeepTabs.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace KeepTabs.Database.Migrations
+namespace KeepTabs.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260907022809_DailyUptimeSummaries")]
+    partial class DailyUptimeSummaries
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -152,28 +155,6 @@ namespace KeepTabs.Database.Migrations
                     b.ToTable("DailyUptimeSummaries");
                 });
 
-            modelBuilder.Entity("KeepTabs.Domain.HourlyUptimeSummary", b =>
-                {
-                    b.Property<Guid>("MonitorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("Hour")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<double>("AverageResponseTimeMs")
-                        .HasColumnType("double precision");
-
-                    b.Property<int>("TotalChecks")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("UpCount")
-                        .HasColumnType("integer");
-
-                    b.HasKey("MonitorId", "Hour");
-
-                    b.ToTable("HourlyUptimeSummaries");
-                });
-
             modelBuilder.Entity("KeepTabs.Domain.Monitor", b =>
                 {
                     b.Property<Guid>("Id")
@@ -282,67 +263,6 @@ namespace KeepTabs.Database.Migrations
                     b.HasIndex("MonitorId", "Timestamp");
 
                     b.ToTable("MonitorChecks");
-                });
-
-            modelBuilder.Entity("KeepTabs.Domain.StatusPage", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("Created")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsPublic")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTimeOffset>("LastModified")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("LastModifiedBy")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("Slug")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Slug")
-                        .IsUnique();
-
-                    b.ToTable("StatusPages");
-                });
-
-            modelBuilder.Entity("KeepTabs.Domain.StatusPageMonitor", b =>
-                {
-                    b.Property<Guid>("StatusPageId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("MonitorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("integer");
-
-                    b.HasKey("StatusPageId", "MonitorId");
-
-                    b.HasIndex("MonitorId");
-
-                    b.ToTable("StatusPageMonitors");
                 });
 
             modelBuilder.Entity("KeepTabs.Infrastructure.Identity.ApplicationUser", b =>
@@ -592,17 +512,6 @@ namespace KeepTabs.Database.Migrations
                     b.Navigation("Monitor");
                 });
 
-            modelBuilder.Entity("KeepTabs.Domain.HourlyUptimeSummary", b =>
-                {
-                    b.HasOne("KeepTabs.Domain.Monitor", "Monitor")
-                        .WithMany()
-                        .HasForeignKey("MonitorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Monitor");
-                });
-
             modelBuilder.Entity("KeepTabs.Domain.MonitorCheck", b =>
                 {
                     b.HasOne("KeepTabs.Domain.Monitor", "Monitor")
@@ -612,25 +521,6 @@ namespace KeepTabs.Database.Migrations
                         .IsRequired();
 
                     b.Navigation("Monitor");
-                });
-
-            modelBuilder.Entity("KeepTabs.Domain.StatusPageMonitor", b =>
-                {
-                    b.HasOne("KeepTabs.Domain.Monitor", "Monitor")
-                        .WithMany()
-                        .HasForeignKey("MonitorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("KeepTabs.Domain.StatusPage", "StatusPage")
-                        .WithMany("Monitors")
-                        .HasForeignKey("StatusPageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Monitor");
-
-                    b.Navigation("StatusPage");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -689,11 +579,6 @@ namespace KeepTabs.Database.Migrations
                     b.Navigation("AlertRules");
 
                     b.Navigation("Checks");
-                });
-
-            modelBuilder.Entity("KeepTabs.Domain.StatusPage", b =>
-                {
-                    b.Navigation("Monitors");
                 });
 #pragma warning restore 612, 618
         }

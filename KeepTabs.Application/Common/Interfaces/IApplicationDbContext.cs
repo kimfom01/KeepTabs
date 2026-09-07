@@ -14,6 +14,10 @@ public interface IApplicationDbContext
     DbSet<AlertRule> AlertRules { get; }
     DbSet<AlertLog> AlertLogs { get; }
     DbSet<AppSetting> AppSettings { get; }
+    DbSet<DailyUptimeSummary> DailyUptimeSummaries { get; }
+    DbSet<HourlyUptimeSummary> HourlyUptimeSummaries { get; }
+    DbSet<StatusPage> StatusPages { get; }
+    DbSet<StatusPageMonitor> StatusPageMonitors { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

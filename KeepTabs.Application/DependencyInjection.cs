@@ -4,6 +4,7 @@ using KeepTabs.Application.Alerts;
 using KeepTabs.Application.Monitors;
 using KeepTabs.Application.Monitoring;
 using KeepTabs.Application.Settings;
+using KeepTabs.Application.StatusPages;
 using KeepTabs.Application.Users;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,6 +18,7 @@ public static class DependencyInjection
 
         services.AddScoped<IMonitorService, MonitorService>();
         services.AddScoped<IAlertService, AlertService>();
+        services.AddScoped<IStatusPageService, StatusPageService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddMonitorChecking();
@@ -27,6 +29,7 @@ public static class DependencyInjection
         services.AddScoped<IMonitorCheckRunner, MonitorCheckRunner>();
         services.AddScoped<IAlertEvaluator, AlertEvaluator>();
         services.AddScoped<ISettingsService, SettingsService>();
+        services.AddScoped<IUptimeAggregator, DailyUptimeAggregator>();
     }
 }
 

@@ -58,10 +58,9 @@ Goal: basic uptime monitoring via HTTP + core UI + worker.
 - [x] Healthchecks, healthy-dependency ordering, restart policies, `.env.example`
 - [x] API `Dockerfile` (incl. node stage building the SPA) + `Dockerfile.Worker`
 - [x] Environment documentation in README (user secrets for local dev)
-- [x] `KeepTabs.http` request collection
 
 ### Tests ✅
-- [x] 77-test xUnit suite: domain, validators, auth services, CORS, DI composition
+- [x] 120+ test xUnit suite: domain, validators, auth services, CORS, DI composition
 - [x] SQLite-free integration tests on Testcontainers Postgres 17 (prod 1:1)
 - [x] Regression tests for the worker check-save bug
 
@@ -126,29 +125,34 @@ Goal: more monitor types.
 
 ---
 
-## v0.4.0 — Dashboard & analytics upgrade ⬜
+## v0.4.0 — Dashboard & analytics upgrade ✅ (complete)
 
 Goal: improve UX & data visibility.
 
-### Backend
-- [ ] Pre-aggregate daily uptime summaries
-- [ ] Faster history querying (indexes/paging)
-- [ ] Summary caching
+### Backend ✅
+- [x] Pre-aggregate daily uptime summaries (`DailyUptimeSummaries` + worker `DailySummaryJob`, idempotent)
+- [x] Pre-aggregate hourly buckets (`HourlyUptimeSummaries`, trailing 3 days)
+- [x] Faster history querying (composite index, 1000-item cap, client pagination)
+- [x] Summary caching (60s TTL; TTL-based since worker/API are separate processes)
 
-### UI
-- [ ] Response-time graph, uptime chart (24h/7d/30d)
-- [ ] Monitor search + filter by status
-- [ ] Group monitors by project
+### UI ✅
+- [x] Response-time graph + 30-day daily uptime bars
+- [x] Monitor search + filter by UP/DOWN/paused
+- [ ] Group monitors by project (no project model exists; deferred — overlaps v0.6 teams)
 
 ---
 
-## v0.5.0 — Public status pages ⬜
+## v0.5.0 — Public status pages ✅ (complete)
 
 Goal: public uptime pages.
 
-- [ ] `StatusPage` entity, slug system (`/status/{slug}`)
-- [ ] Public API tokens + public summary endpoints
-- [ ] Status page builder, public template, custom themes
+- [x] `StatusPage` entity + ordered monitor links, slug system (`/status/{slug}`, normalized, globally unique)
+- [x] Slugs auto-generated from the name with `-2`, `-3` suffixing; editable with live availability check
+- [x] No public API tokens needed: published pages are anonymously readable, nothing else is exposed
+- [x] Public summary data per monitor (state, uptime %, no owner data)
+- [x] Status page builder (name, slug, visibility, monitor picker) + public template
+- [x] Per-hour / per-day availability bars with green/amber/red states
+- [ ] Custom colors/themes
 
 ---
 

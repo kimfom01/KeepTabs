@@ -176,8 +176,8 @@ front-src/                React SPA (built into KeepTabs/wwwroot)
 AppHost/                  Aspire orchestration
 ```
 
-API usage examples live in [`KeepTabs.http`](KeepTabs.http); the build plan in
-[`PLAN.md`](PLAN.md).
+Explore the interactive API reference at `/swagger` (served in every
+environment); the build plan lives in [`PLAN.md`](PLAN.md).
 
 ---
 

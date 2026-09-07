@@ -78,6 +78,13 @@ public static class MonitorEndpoints
             .WithDescription("Returns recent persisted check results. Defaults to 30 days.")
             .Produces<IReadOnlyList<MonitorCheckHistoryItem>>()
             .Produces(StatusCodes.Status404NotFound);
+
+        group.MapGet("/{monitorId:guid}/daily", GetDaily)
+            .WithName("GetMonitorDaily")
+            .WithSummary("Get daily availability")
+            .WithDescription("Returns pre-aggregated per-day availability. Defaults to 30 days, max 90.")
+            .Produces<IReadOnlyList<DailyUptimeItem>>()
+            .Produces(StatusCodes.Status404NotFound);
     }
 
     private static async Task<Results<CreatedAtRoute<GetMonitorResponse>, ValidationProblem>> CreateMonitor(
@@ -200,6 +207,23 @@ public static class MonitorEndpoints
         var history = await monitorService.GetHistoryAsync(userId, monitorId, days ?? 30, cancellationToken);
 
         return TypedResults.Ok(history);
+    }
+
+    private static async Task<Results<Ok<IReadOnlyList<DailyUptimeItem>>, ProblemHttpResult>> GetDaily(
+        Guid monitorId,
+        IUser currentUser,
+        IMonitorService monitorService,
+        int? days,
+        CancellationToken cancellationToken)
+    {
+        var userId = RequireUserId(currentUser);
+        var monitor = await monitorService.GetMonitorByIdAsync(userId, monitorId, cancellationToken);
+        if (monitor is null)
+        {
+            return MonitorNotFound();
+        }
+
+        return TypedResults.Ok(await monitorService.GetDailyAsync(userId, monitorId, days ?? 30, cancellationToken));
     }
 
     private static string RequireUserId(IUser currentUser)
