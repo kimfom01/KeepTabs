@@ -3,17 +3,20 @@ using System;
 using KeepTabs.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace KeepTabs.Database.Migrations
+namespace KeepTabs.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260907024305_StatusPages")]
+    partial class StatusPages
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -150,28 +153,6 @@ namespace KeepTabs.Database.Migrations
                     b.HasKey("MonitorId", "Date");
 
                     b.ToTable("DailyUptimeSummaries");
-                });
-
-            modelBuilder.Entity("KeepTabs.Domain.HourlyUptimeSummary", b =>
-                {
-                    b.Property<Guid>("MonitorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("Hour")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<double>("AverageResponseTimeMs")
-                        .HasColumnType("double precision");
-
-                    b.Property<int>("TotalChecks")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("UpCount")
-                        .HasColumnType("integer");
-
-                    b.HasKey("MonitorId", "Hour");
-
-                    b.ToTable("HourlyUptimeSummaries");
                 });
 
             modelBuilder.Entity("KeepTabs.Domain.Monitor", b =>
@@ -582,17 +563,6 @@ namespace KeepTabs.Database.Migrations
                 });
 
             modelBuilder.Entity("KeepTabs.Domain.DailyUptimeSummary", b =>
-                {
-                    b.HasOne("KeepTabs.Domain.Monitor", "Monitor")
-                        .WithMany()
-                        .HasForeignKey("MonitorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Monitor");
-                });
-
-            modelBuilder.Entity("KeepTabs.Domain.HourlyUptimeSummary", b =>
                 {
                     b.HasOne("KeepTabs.Domain.Monitor", "Monitor")
                         .WithMany()

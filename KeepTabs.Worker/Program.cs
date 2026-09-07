@@ -15,11 +15,17 @@ builder.Services.AddQuartz(q =>
     q.AddJob<MonitorCheckJob>(options => options
         .WithIdentity(MonitorCheckJob.JobName)
         .StoreDurably());
+    q.AddJob<DailySummaryJob>(options => options.WithIdentity("daily-summary-job"));
     q.AddTrigger(options => options
         .ForJob(new JobKey("monitor-scan-job"))
         .WithIdentity("monitor-scan-trigger")
         .StartNow()
         .WithSimpleSchedule(schedule => schedule.WithIntervalInSeconds(30).RepeatForever()));
+    q.AddTrigger(options => options
+        .ForJob(new JobKey("daily-summary-job"))
+        .WithIdentity("daily-summary-trigger")
+        .StartNow()
+        .WithCronSchedule("0 30 0 * * ?"));
 });
 builder.Services.AddQuartzHostedService(options => options.WaitForJobsToComplete = true);
 

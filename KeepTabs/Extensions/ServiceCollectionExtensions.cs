@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
             services.AddExceptionHandler<ApiExceptionHandler>();
             services.AddValidation();
             services.AddHttpClient();
+            services.AddMemoryCache();
             services.AddKeepTabsAuthentication();
             services.AddHttpContextAccessor();
             services.ConfigureCors(configuration);

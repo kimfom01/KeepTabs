@@ -36,6 +36,11 @@ public interface IMonitorService
         string userId,
         Guid monitorId,
         CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<DailyUptimeItem>> GetDailyAsync(
+        string userId,
+        Guid monitorId,
+        int days,
+        CancellationToken cancellationToken = default);
     Task<IReadOnlyList<MonitorCheckHistoryItem>> GetHistoryAsync(
         string userId,
         Guid monitorId,
