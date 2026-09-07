@@ -10,9 +10,9 @@ const dotStyles: Record<MonitorState, string> = {
 };
 
 const labelStyles: Record<MonitorState, string> = {
-  up: "text-emerald-700",
-  down: "text-rose-700",
-  paused: "text-amber-700",
+  up: "text-emerald-700 dark:text-emerald-400",
+  down: "text-rose-700 dark:text-rose-400",
+  paused: "text-amber-700 dark:text-amber-400",
   unknown: "text-muted-foreground",
 };
 

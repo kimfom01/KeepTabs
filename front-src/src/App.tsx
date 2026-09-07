@@ -1,8 +1,11 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { ThemeProvider, useTheme } from "@/lib/theme";
 import { AlertsPage } from "@/pages/alerts";
 import { ApiKeysPage } from "@/pages/api-keys";
+import { DocsPage } from "@/pages/docs";
+import { LandingPage } from "@/pages/landing";
 import { SettingsPage } from "@/pages/settings";
 import { DashboardPage } from "@/pages/dashboard";
 import { LoginPage } from "@/pages/login";
@@ -36,13 +39,15 @@ function RedirectIfSignedIn({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return user ? <Navigate to="/" replace /> : <>{children}</>;
+  return user ? <Navigate to="/dashboard" replace /> : <>{children}</>;
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <ThemeProvider>
+      <AuthProvider>
+        <ThemedToaster />
+        <BrowserRouter>
         <Routes>
           <Route
             path="/login"
@@ -60,8 +65,9 @@ export default function App() {
               </RedirectIfSignedIn>
             }
           />
+          <Route path="/" element={<LandingPage />} />
           <Route
-            path="/"
+            path="/dashboard"
             element={
               <RequireAuth>
                 <DashboardPage />
@@ -100,10 +106,17 @@ export default function App() {
               </RequireAuth>
             }
           />
+          <Route path="/docs" element={<DocsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>
-      <Toaster position="top-center" />
-    </AuthProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
+}
+
+function ThemedToaster() {
+  const { theme } = useTheme();
+
+  return <Toaster position="top-center" theme={theme} />;
 }

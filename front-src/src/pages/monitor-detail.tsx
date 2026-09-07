@@ -123,7 +123,7 @@ export function MonitorDetailPage() {
     try {
       await monitorsApi.remove(monitor.monitorId);
       toast.success("Monitor deleted.");
-      navigate("/", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : "Could not delete the monitor.");
     } finally {
@@ -214,7 +214,7 @@ export function MonitorDetailPage() {
             It may have been deleted, or you followed a bad link.
           </p>
           <Button asChild className="mt-6">
-            <Link to="/">Back to monitors</Link>
+            <Link to="/dashboard">Back to monitors</Link>
           </Button>
         </main>
       </div>
@@ -228,7 +228,7 @@ export function MonitorDetailPage() {
       <AppHeader />
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <Button variant="ghost" size="sm" asChild className="mb-4">
-          <Link to="/">
+          <Link to="/dashboard">
             <ArrowLeftIcon data-icon="inline-start" />
             Monitors
           </Link>
@@ -255,7 +255,7 @@ export function MonitorDetailPage() {
                   <StatusLabel state={state} />
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button variant="outline" onClick={() => setDialogOpen(true)}>
                   <PencilIcon data-icon="inline-start" />
                   Edit
@@ -380,7 +380,8 @@ export function MonitorDetailPage() {
                     Rules watch this monitor and notify you through email or webhooks.
                   </p>
                 ) : (
-                  <Table>
+                  <div className="overflow-x-auto">
+                    <Table className="min-w-[720px]">
                     <TableHeader>
                       <TableRow>
                         <TableHead>Trigger</TableHead>
@@ -448,9 +449,10 @@ export function MonitorDetailPage() {
                           </TableCell>
                         </TableRow>
                       ))}
-                    </TableBody>
-                  </Table>
-                )}
+                        </TableBody>
+                      </Table>
+                      </div>
+                    )}
               </CardContent>
             </Card>
 
@@ -505,7 +507,8 @@ export function MonitorDetailPage() {
                         No checks match these filters.
                       </p>
                     ) : (
-                      <Table>
+                      <div className="overflow-x-auto">
+                        <Table className="min-w-[760px]">
                         <TableHeader>
                           <TableRow>
                             <TableHead>Time</TableHead>
@@ -534,13 +537,14 @@ export function MonitorDetailPage() {
                               <TableCell className="font-mono tabular-nums">
                                 {check.sslDaysRemaining === null ? "—" : `${check.sslDaysRemaining}d`}
                               </TableCell>
-                              <TableCell className="max-w-64 truncate text-muted-foreground">
-                                {check.errorMessage ?? "—"}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                          <TableCell className="max-w-64 truncate text-muted-foreground">
+                            {check.errorMessage ?? "—"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                        </Table>
+                      </div>
                     )}
                     {checksPageCount > 1 && (
                       <div className="flex items-center justify-between border-t px-6 py-3">

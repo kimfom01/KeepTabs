@@ -145,7 +145,7 @@ export function SettingsPage() {
                     <Switch id="smtp-enabled" checked={smtpEnabled} onCheckedChange={setSmtpEnabled} />
                     <FieldLabel htmlFor="smtp-enabled">Enabled</FieldLabel>
                   </Field>
-                  <div className="flex gap-4">
+                  <div className="flex flex-col gap-4 sm:flex-row">
                     <Field className="flex-[2]">
                       <FieldLabel htmlFor="smtp-host">Host</FieldLabel>
                       <Input
@@ -167,7 +167,7 @@ export function SettingsPage() {
                       />
                     </Field>
                   </div>
-                  <div className="flex gap-4">
+                  <div className="flex flex-col gap-4 sm:flex-row">
                     <Field>
                       <FieldLabel htmlFor="smtp-username">Username</FieldLabel>
                       <Input

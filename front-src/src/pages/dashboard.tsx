@@ -187,7 +187,8 @@ export function DashboardPage() {
                 </EmptyContent>
               </Empty>
             ) : (
-              <Table>
+              <div className="overflow-x-auto">
+                <Table className="min-w-[680px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Status</TableHead>
@@ -278,7 +279,8 @@ export function DashboardPage() {
                     );
                   })}
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>

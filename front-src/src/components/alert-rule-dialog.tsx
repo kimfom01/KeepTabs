@@ -132,7 +132,7 @@ export function AlertRuleDialog({ open, onOpenChange, monitorId, initial, onSave
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <FieldGroup>
-            <div className="flex gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row">
               <Field className="flex-1">
                 <FieldLabel htmlFor="alert-type">Channel</FieldLabel>
                 <Select value={type} onValueChange={(value) => setType(value as AlertType)}>
@@ -186,7 +186,7 @@ export function AlertRuleDialog({ open, onOpenChange, monitorId, initial, onSave
                 {triggers.find((t) => t.value === trigger)?.hint}
               </FieldDescription>
             </Field>
-            <div className="flex gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row">
               <Field>
                 <FieldLabel htmlFor="alert-threshold">Failures to trigger</FieldLabel>
                 <Input

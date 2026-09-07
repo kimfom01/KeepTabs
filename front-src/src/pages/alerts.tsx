@@ -73,7 +73,8 @@ export function AlertsPage() {
                 <EmptyContent />
               </Empty>
             ) : (
-              <Table>
+              <div className="overflow-x-auto">
+                <Table className="min-w-[600px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Time</TableHead>
@@ -102,7 +103,8 @@ export function AlertsPage() {
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>

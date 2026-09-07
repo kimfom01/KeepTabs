@@ -148,7 +148,7 @@ export function MonitorFormDialog({ open, onOpenChange, initial, onSaved }: Moni
                 autoComplete="off"
               />
             </Field>
-            <div className="flex gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row">
               <Field className="flex-1">
                 <FieldLabel htmlFor="monitor-protocol">Protocol</FieldLabel>
                 <Select value={protocol} onValueChange={(value) => setProtocol(value as ProtocolType)}>
@@ -178,7 +178,7 @@ export function MonitorFormDialog({ open, onOpenChange, initial, onSaved }: Moni
                 />
               </Field>
             </div>
-            <div className="flex gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row">
               <Field>
                 <FieldLabel htmlFor="monitor-interval">Interval (s)</FieldLabel>
                 <Input
