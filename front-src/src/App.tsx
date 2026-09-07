@@ -1,7 +1,9 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { AlertsPage } from "@/pages/alerts";
 import { ApiKeysPage } from "@/pages/api-keys";
+import { SettingsPage } from "@/pages/settings";
 import { DashboardPage } from "@/pages/dashboard";
 import { LoginPage } from "@/pages/login";
 import { MonitorDetailPage } from "@/pages/monitor-detail";
@@ -75,10 +77,26 @@ export default function App() {
             }
           />
           <Route
+            path="/alerts"
+            element={
+              <RequireAuth>
+                <AlertsPage />
+              </RequireAuth>
+            }
+          />
+          <Route
             path="/api-keys"
             element={
               <RequireAuth>
                 <ApiKeysPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <RequireAuth>
+                <SettingsPage />
               </RequireAuth>
             }
           />

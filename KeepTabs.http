@@ -2,6 +2,7 @@
 @token = YOUR_JWT_HERE
 @apiKey = YOUR_API_KEY_HERE
 @monitorId = 00000000-0000-0000-0000-000000000000
+@alertRuleId = 00000000-0000-0000-0000-000000000000
 
 ### Register a user
 POST {{baseUrl}}/auth/register
@@ -46,7 +47,8 @@ Content-Type: application/json
   "protocol": "Http",
   "checkIntervalSeconds": 60,
   "timeoutSeconds": 10,
-  "expectedStatusCode": 200
+  "expectedStatusCode": 200,
+  "useHeadRequest": false
 }
 
 ### List monitors
@@ -91,3 +93,78 @@ Authorization: Bearer {{token}}
 ### Delete a monitor
 DELETE {{baseUrl}}/monitors/{{monitorId}}
 Authorization: Bearer {{token}}
+
+### Create an alert rule
+POST {{baseUrl}}/alerts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "monitorId": "{{monitorId}}",
+  "type": "Webhook",
+  "triggerType": "OnDown",
+  "threshold": 1,
+  "coolDownMinutes": 60,
+  "target": "https://hooks.example.com/keeptabs",
+  "isEnabled": true
+}
+
+### Create a Telegram alert rule
+POST {{baseUrl}}/alerts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "monitorId": "{{monitorId}}",
+  "type": "Telegram",
+  "triggerType": "ConsecutiveFailures",
+  "threshold": 3,
+  "coolDownMinutes": 30,
+  "target": "-1001234567890",
+  "isEnabled": true
+}
+
+### List alert rules
+GET {{baseUrl}}/alerts
+Authorization: Bearer {{token}}
+
+### List alert rules for a monitor
+GET {{baseUrl}}/alerts?monitorId={{monitorId}}
+Authorization: Bearer {{token}}
+
+### Send a test alert
+POST {{baseUrl}}/alerts/{{alertRuleId}}/test
+Authorization: Bearer {{token}}
+
+### List alert deliveries
+GET {{baseUrl}}/alerts/logs
+Authorization: Bearer {{token}}
+
+### Get SMTP settings
+GET {{baseUrl}}/settings/smtp
+Authorization: Bearer {{token}}
+
+### Update SMTP settings
+PUT {{baseUrl}}/settings/smtp
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "enabled": true,
+  "host": "smtp.example.com",
+  "port": 587,
+  "username": "ops",
+  "password": "",
+  "from": "alerts@example.com",
+  "enableSsl": true
+}
+
+### Update Telegram settings
+PUT {{baseUrl}}/settings/telegram
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "enabled": true,
+  "botToken": ""
+}

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Field,
+  FieldContent,
   FieldDescription,
   FieldError,
   FieldGroup,
@@ -49,6 +50,7 @@ export function MonitorFormDialog({ open, onOpenChange, initial, onSaved }: Moni
   const [interval, setInterval] = useState("60");
   const [timeout, setTimeout] = useState("10");
   const [expectedStatus, setExpectedStatus] = useState("200");
+  const [useHead, setUseHead] = useState(false);
   const [paused, setPaused] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -62,6 +64,7 @@ export function MonitorFormDialog({ open, onOpenChange, initial, onSaved }: Moni
     setInterval(String(initial?.checkIntervalSeconds ?? 60));
     setTimeout(String(initial?.timeoutSeconds ?? 10));
     setExpectedStatus(String(initial?.expectedStatusCode ?? 200));
+    setUseHead(initial?.useHeadRequest ?? false);
     setPaused(initial?.isPaused ?? false);
   }, [open, initial]);
 
@@ -101,6 +104,7 @@ export function MonitorFormDialog({ open, onOpenChange, initial, onSaved }: Moni
             timeoutSeconds,
             expectedStatusCode: protocol === "Http" ? Number(expectedStatus) || null : null,
             isPaused: paused,
+            useHeadRequest: protocol === "Http" ? useHead : false,
           })
         : await monitorsApi.create({
             name: name.trim(),
@@ -109,6 +113,7 @@ export function MonitorFormDialog({ open, onOpenChange, initial, onSaved }: Moni
             checkIntervalSeconds: intervalSeconds,
             timeoutSeconds,
             expectedStatusCode: protocol === "Http" ? Number(expectedStatus) || null : null,
+            useHeadRequest: protocol === "Http" ? useHead : false,
           });
       toast.success(initial ? "Monitor updated." : "Monitor created.");
       onSaved(saved);
@@ -204,6 +209,15 @@ export function MonitorFormDialog({ open, onOpenChange, initial, onSaved }: Moni
                 </Field>
               )}
             </div>
+            {protocol === "Http" && (
+              <Field orientation="horizontal">
+                <Switch id="monitor-head" checked={useHead} onCheckedChange={setUseHead} />
+                <FieldContent>
+                  <FieldLabel htmlFor="monitor-head">Use HEAD requests</FieldLabel>
+                  <FieldDescription>Lighter checks that skip the response body.</FieldDescription>
+                </FieldContent>
+              </Field>
+            )}
             {initial && (
               <Field orientation="horizontal">
                 <Switch id="monitor-paused" checked={paused} onCheckedChange={setPaused} />

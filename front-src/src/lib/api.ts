@@ -12,6 +12,7 @@ export interface Monitor {
   checkIntervalSeconds: number;
   timeoutSeconds: number;
   expectedStatusCode: number | null;
+  useHeadRequest: boolean;
   isPaused: boolean;
   lastCheckedAt: string | null;
   lastStatusUp: boolean | null;
@@ -24,6 +25,7 @@ export interface CreateMonitorRequest {
   checkIntervalSeconds: number;
   timeoutSeconds: number;
   expectedStatusCode: number | null;
+  useHeadRequest: boolean;
 }
 
 export interface UpdateMonitorRequest {
@@ -34,6 +36,7 @@ export interface UpdateMonitorRequest {
   timeoutSeconds?: number | null;
   expectedStatusCode?: number | null;
   isPaused?: boolean | null;
+  useHeadRequest?: boolean | null;
 }
 
 export interface MonitorSummary {
@@ -56,6 +59,7 @@ export interface MonitorCheck {
   statusCode: number | null;
   responseTimeMs: number;
   errorMessage: string | null;
+  sslDaysRemaining: number | null;
 }
 
 export interface AuthResponse {
@@ -79,6 +83,88 @@ export interface ProblemDetails {
   detail?: string;
   status?: number;
   errors?: Record<string, string[]>;
+}
+
+export type AlertType = "Email" | "Webhook" | "Telegram";
+export type AlertTriggerType = "OnDown" | "OnUp" | "ConsecutiveFailures";
+
+export interface AlertRule {
+  alertRuleId: string;
+  monitorId: string;
+  monitorName: string;
+  type: AlertType;
+  triggerType: AlertTriggerType;
+  threshold: number;
+  coolDownMinutes: number;
+  isEnabled: boolean;
+  target: string;
+  lastFiredAt: string | null;
+}
+
+export interface CreateAlertRuleRequest {
+  monitorId: string;
+  type: AlertType;
+  triggerType: AlertTriggerType;
+  threshold: number;
+  coolDownMinutes: number;
+  target: string;
+  isEnabled: boolean;
+}
+
+export interface UpdateAlertRuleRequest {
+  type?: AlertType | null;
+  triggerType?: AlertTriggerType | null;
+  threshold?: number | null;
+  coolDownMinutes?: number | null;
+  target?: string | null;
+  isEnabled?: boolean | null;
+}
+
+export interface AlertLog {
+  alertLogId: string;
+  alertRuleId: string;
+  monitorId: string;
+  monitorName: string;
+  firedAt: string;
+  message: string;
+  success: boolean;
+  error: string | null;
+}
+
+export interface TestAlertResult {
+  success: boolean;
+  error: string | null;
+  message: string;
+}
+
+export interface SmtpSettings {
+  enabled: boolean;
+  host: string;
+  port: number;
+  username: string;
+  passwordSet: boolean;
+  from: string;
+  enableSsl: boolean;
+}
+
+export interface UpdateSmtpSettingsRequest {
+  enabled: boolean;
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  from: string;
+  enableSsl: boolean;
+}
+
+export interface TelegramSettings {
+  enabled: boolean;
+  tokenSet: boolean;
+}
+
+export interface UpdateTelegramSettingsRequest {
+  enabled: boolean;
+  botToken: string;
 }
 
 export class ApiError extends Error {
@@ -150,6 +236,15 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   return (await response.json()) as T;
 }
 
+export const settingsApi = {
+  getSmtp: () => request<SmtpSettings>("/settings/smtp"),
+  updateSmtp: (payload: UpdateSmtpSettingsRequest) =>
+    request<SmtpSettings>("/settings/smtp", { method: "PUT", body: payload }),
+  getTelegram: () => request<TelegramSettings>("/settings/telegram"),
+  updateTelegram: (payload: UpdateTelegramSettingsRequest) =>
+    request<TelegramSettings>("/settings/telegram", { method: "PUT", body: payload }),
+};
+
 export const authApi = {
   login: (email: string, password: string) =>
     request<AuthResponse>("/auth/login", { method: "POST", body: { email, password } }),
@@ -162,6 +257,20 @@ export const authApi = {
   regenerateApiKey: () => request<{ apiKey: string }>("/auth/api-key/regenerate", { method: "POST" }),
 };
 
+export const alertsApi = {
+  list: (monitorId?: string) =>
+    request<AlertRule[]>(`/alerts${monitorId ? `?monitorId=${monitorId}` : ""}`),
+  get: (alertRuleId: string) => request<AlertRule>(`/alerts/${alertRuleId}`),
+  create: (payload: CreateAlertRuleRequest) =>
+    request<AlertRule>("/alerts", { method: "POST", body: payload }),
+  update: (alertRuleId: string, payload: UpdateAlertRuleRequest) =>
+    request<AlertRule>(`/alerts/${alertRuleId}`, { method: "PUT", body: payload }),
+  remove: (alertRuleId: string) => request<void>(`/alerts/${alertRuleId}`, { method: "DELETE" }),
+  test: (alertRuleId: string) =>
+    request<TestAlertResult>(`/alerts/${alertRuleId}/test`, { method: "POST" }),
+  logs: (monitorId?: string) =>
+    request<AlertLog[]>(`/alerts/logs${monitorId ? `?monitorId=${monitorId}` : ""}`),
+};
 export const monitorsApi = {
   list: () => request<Monitor[]>("/monitors"),
   get: (monitorId: string) => request<Monitor>(`/monitors/${monitorId}`),

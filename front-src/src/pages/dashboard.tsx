@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
-import { EllipsisIcon, PauseIcon, PlayIcon, PlusIcon, RadarIcon, Trash2Icon } from "lucide-react";
+import { EllipsisIcon, EyeIcon, PauseIcon, PencilIcon, PlayIcon, PlusIcon, RadarIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/app-header";
 import { MonitorFormDialog } from "@/components/monitor-form-dialog";
@@ -240,7 +240,14 @@ export function DashboardPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuGroup>
+                                <DropdownMenuItem asChild>
+                                  <Link to={`/monitors/${monitor.monitorId}`}>
+                                    <EyeIcon data-icon="inline-start" />
+                                    View details
+                                  </Link>
+                                </DropdownMenuItem>
                                 <DropdownMenuItem onSelect={() => openEdit(monitor)}>
+                                  <PencilIcon data-icon="inline-start" />
                                   Edit
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onSelect={() => togglePaused(monitor)}>

@@ -24,11 +24,11 @@ RUN dotnet restore "KeepTabs/KeepTabs.csproj"
 COPY . .
 COPY --from=frontend /src/KeepTabs/wwwroot ./KeepTabs/wwwroot
 WORKDIR "/src/KeepTabs"
-RUN dotnet build "KeepTabs.csproj" -c $BUILD_CONFIGURATION --no-restore -o /app/build
+RUN dotnet build "KeepTabs.csproj" -c $BUILD_CONFIGURATION --no-restore -o /app/build /p:BuildFrontend=false
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "KeepTabs.csproj" -c $BUILD_CONFIGURATION --no-restore -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "KeepTabs.csproj" -c $BUILD_CONFIGURATION --no-restore -o /app/publish /p:UseAppHost=false /p:BuildFrontend=false
 
 FROM base AS final
 WORKDIR /app

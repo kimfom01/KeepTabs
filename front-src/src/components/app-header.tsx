@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from "react-router";
-import { ActivityIcon, KeyRoundIcon, LogOutIcon, MonitorIcon } from "lucide-react";
+import { ActivityIcon, BellRingIcon, KeyRoundIcon, LogOutIcon, MonitorIcon, SettingsIcon } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +16,9 @@ import { cn } from "@/lib/utils";
 
 const links = [
   { to: "/", label: "Monitors", icon: MonitorIcon, end: true },
+  { to: "/alerts", label: "Alerts", icon: BellRingIcon, end: false },
   { to: "/api-keys", label: "API keys", icon: KeyRoundIcon, end: false },
+  { to: "/settings", label: "Settings", icon: SettingsIcon, end: false },
 ];
 
 export function AppHeader() {

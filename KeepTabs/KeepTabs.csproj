@@ -25,4 +25,12 @@
         <ProjectReference Include="..\ServiceDefaults\ServiceDefaults.csproj" />
     </ItemGroup>
 
+    <!-- Builds the React SPA into wwwroot so `dotnet run` serves UI and API
+         together. Opt out with /p:BuildFrontend=false (the Docker build does
+         this because the frontend stage already emits wwwroot). -->
+    <Target Name="BuildFrontend" BeforeTargets="Build" Condition="'$(BuildFrontend)' != 'false'">
+        <Exec Command="pnpm install --frozen-lockfile" WorkingDirectory="../front-src" Condition="!Exists('../front-src/node_modules')" />
+        <Exec Command="pnpm build" WorkingDirectory="../front-src" />
+    </Target>
+
 </Project>
