@@ -5,9 +5,9 @@ name: .NET
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "development", "main" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "development", "main" ]
 
 jobs:
   build:
@@ -20,6 +20,16 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 10.0.x
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 11
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 24
+        cache: pnpm
+        cache-dependency-path: front-src/pnpm-lock.yaml
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
