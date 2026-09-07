@@ -113,6 +113,23 @@ namespace KeepTabs.Database.Migrations
                     b.ToTable("AlertRules");
                 });
 
+            modelBuilder.Entity("KeepTabs.Domain.AppSetting", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("text");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("AppSettings");
+                });
+
             modelBuilder.Entity("KeepTabs.Domain.Monitor", b =>
                 {
                     b.Property<Guid>("Id")
@@ -162,6 +179,9 @@ namespace KeepTabs.Database.Migrations
                         .HasMaxLength(1024)
                         .HasColumnType("character varying(1024)");
 
+                    b.Property<bool>("UseHeadRequest")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("text");
@@ -202,6 +222,9 @@ namespace KeepTabs.Database.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<int>("ResponseTimeMs")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SslDaysRemaining")
                         .HasColumnType("integer");
 
                     b.Property<int?>("StatusCode")

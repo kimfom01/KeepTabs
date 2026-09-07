@@ -14,12 +14,15 @@
 **/azds.yaml
 **/bin
 **/charts
+**/dist
 **/docker-compose*
 **/Dockerfile*
 **/node_modules
 **/npm-debug.log
 **/obj
 **/secrets.dev.yaml
+# Host-built SPA output: the image builds it fresh in the frontend stage.
+KeepTabs/wwwroot
 **/values.dev.yaml
 LICENSE
 README.md

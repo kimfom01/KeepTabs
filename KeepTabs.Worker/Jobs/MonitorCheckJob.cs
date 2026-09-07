@@ -1,5 +1,4 @@
 using KeepTabs.Application.Monitoring;
-using Microsoft.Extensions.DependencyInjection;
 using Quartz;
 
 namespace KeepTabs.Worker.Jobs;

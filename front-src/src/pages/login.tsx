@@ -24,7 +24,7 @@ export function LoginPage() {
     setBusy(true);
     try {
       await signIn(email.trim(), password);
-      navigate("/", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (error) {
       const message = error instanceof ApiError ? error.message : "Could not sign in.";
       setFormError(message);

@@ -26,7 +26,7 @@ export function RegisterPage() {
     setBusy(true);
     try {
       await signUp(email.trim(), password, firstName.trim() || undefined, lastName.trim() || undefined);
-      navigate("/", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (error) {
       const message = error instanceof ApiError ? error.message : "Could not create the account.";
       setFormError(message);
@@ -51,7 +51,7 @@ export function RegisterPage() {
         <CardContent>
           <form onSubmit={handleSubmit}>
             <FieldGroup>
-              <div className="flex gap-4">
+              <div className="flex flex-col gap-4 sm:flex-row">
                 <Field>
                   <FieldLabel htmlFor="register-first">First name</FieldLabel>
                   <Input

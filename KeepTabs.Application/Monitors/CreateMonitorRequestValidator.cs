@@ -67,5 +67,12 @@ public sealed class CreateMonitorRequestValidator : AbstractValidator<CreateMoni
                 .InclusiveBetween(100, 599)
                 .WithMessage("Expected status code must be between 100 and 599.");
         });
+
+        When(request => request.UseHeadRequest, () =>
+        {
+            RuleFor(request => request.Protocol)
+                .Equal(ProtocolType.Http)
+                .WithMessage("HEAD requests require the HTTP protocol.");
+        });
     }
 }

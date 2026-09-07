@@ -12,7 +12,7 @@ public static class MonitorEndpoints
     {
         var group = app.MapGroup("monitors")
             .WithTags("Monitors")
-            .RequireAuthorization(Extensions.AuthorizationPolicies.UserAccess);
+            .RequireAuthorization(AuthorizationPolicies.UserAccess);
 
         group.MapPost("/", CreateMonitor)
             .AddEndpointFilter<ValidationFilter<CreateMonitorRequest>>()

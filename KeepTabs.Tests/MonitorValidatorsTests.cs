@@ -1,4 +1,3 @@
-using FluentValidation;
 using KeepTabs.Application.Monitors;
 using KeepTabs.Application.Monitoring;
 using KeepTabs.Application.Monitors.Dtos;
@@ -32,6 +31,17 @@ public sealed class MonitorValidatorsTests
         var validator = new CreateMonitorRequestValidator();
 
         Assert.False(validator.Validate(HttpRequest(url)).IsValid);
+    }
+
+    [Fact]
+    public void HeadRequestsRequireHttpProtocol()
+    {
+        var validator = new CreateMonitorRequestValidator();
+        var http = HttpRequest() with { UseHeadRequest = true };
+        var tcp = new CreateMonitorRequest("TCP service", "example.com:443", ProtocolType.Tcp, 60, 10, null, true);
+
+        Assert.True(validator.Validate(http).IsValid);
+        Assert.False(validator.Validate(tcp).IsValid);
     }
 
     [Fact]

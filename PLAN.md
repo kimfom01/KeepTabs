@@ -13,7 +13,7 @@ Tailwind CSS v4 + shadcn, Aspire orchestration, Docker Compose.
 
 ---
 
-## v0.1.0 — Core MVP ✅ (nearly complete)
+## v0.1.0 — Core MVP ✅ (complete)
 
 Goal: basic uptime monitoring via HTTP + core UI + worker.
 
@@ -47,10 +47,15 @@ Goal: basic uptime monitoring via HTTP + core UI + worker.
 - [x] Login/register + token session, auth-guarded routes
 - [x] Dashboard (monitor list, status, protocol badges)
 - [x] Create/edit monitor dialog, monitor detail view, API-keys page
-- [ ] History chart (detail view currently shows a history **table** only)
+- [x] History chart (response-time area chart on the detail view, plus history table)
+- [x] Public landing page (`/`), app under `/dashboard`
+- [x] Light/dark themes with OS-preference detection
+- [x] Responsive layouts down to phones
+- [x] Integration docs page (webhooks, API keys, Swagger links)
 
 ### DevOps ✅
 - [x] `docker-compose.yaml` (postgres, rabbitmq, api, worker) + `.env` secrets
+- [x] Healthchecks, healthy-dependency ordering, restart policies, `.env.example`
 - [x] API `Dockerfile` (incl. node stage building the SPA) + `Dockerfile.Worker`
 - [x] Environment documentation in README (user secrets for local dev)
 - [x] `KeepTabs.http` request collection
@@ -61,8 +66,8 @@ Goal: basic uptime monitoring via HTTP + core UI + worker.
 - [x] Regression tests for the worker check-save bug
 
 ### Notes / deviations from the old sketch
-- Hangfire server + dashboard are wired in the API, but **no jobs are enqueued** —
-  scheduling lives in the Quartz worker. Decide: use Hangfire or remove it.
+- Hangfire was removed entirely (server, dashboard, packages): scheduling lives
+  in the Quartz worker, and nothing ever enqueued Hangfire jobs.
 - RabbitMQ is provisioned (compose + Aspire references) but **no messaging code
   exists yet**. It is the intended transport for worker fan-out / alerts.
 - `AlertRule` / `AlertLog` entities exist in the data model only — no endpoints,
@@ -70,44 +75,54 @@ Goal: basic uptime monitoring via HTTP + core UI + worker.
 
 ---
 
-## v0.2.0 — Alert system ⬜ (model only)
+## v0.2.0 — Alert system ✅ (complete)
 
 Goal: notify users of state changes.
 
-### Alert rules 🚧
+### Alert rules ✅
 - [x] `AlertRule` entity (+ `AlertLog`)
-- [ ] CRUD endpoints (`/api/alerts`)
-- [ ] UI: create alert rule + management page
+- [x] CRUD endpoints (`/api/alerts`)
+- [x] UI: create/edit alert-rule dialog (per monitor)
+- [x] UI: rules managed on the monitor detail page
 
-### Worker alert engine ⬜
-- [ ] Detect UP → DOWN / DOWN → UP transitions
-- [ ] Detect consecutive failures, apply cooldowns
-- [ ] Store `AlertLog` entries (entity exists, never written)
+### Worker alert engine ✅
+- [x] Detect UP → DOWN / DOWN → UP transitions
+- [x] Detect consecutive failures (threshold-aware, current check included)
+- [x] Apply cooldown periods (`CoolDownMinutes` + `LastFiredAt`)
+- [x] Store `AlertLog` entries (success flag + error)
+- [x] Evaluation runs in the check's unit of work; concurrent changes drop the
+      result with a warning instead of failing the job
 
-### Delivery channels ⬜
-- [ ] SMTP email alerts, webhook POST alerts, "test alert" endpoint
+### Delivery channels ✅
+- [x] SMTP email alerts (DB-backed settings UI, misconfiguration per delivery)
+- [x] Webhook POST alerts (JSON payload, 15s timeout)
+- [x] Telegram alerts (bot token in settings, group chat ID per rule)
+- [x] "Test alert" endpoint (`POST /api/alerts/{id}/test`, always logged)
 
-### UI ⬜
-- [ ] Alert logs list, alert state in monitor detail view
+### UI ✅
+- [x] Alert logs list (`/alerts`)
+- [x] Alert state in monitor detail view (rules table, last delivery)
 
 ---
 
-## v0.3.0 — Multi-protocol support 🚧 (partial)
+## v0.3.0 — Multi-protocol support ✅ (complete)
 
 Goal: more monitor types.
 
 ### Protocols
 - [x] Ping (ICMP) probe
 - [x] TCP port probe
-- [ ] HTTP HEAD option (probe currently uses GET only)
-- [ ] SSL certificate expiry checks
+- [x] HTTP HEAD option (`UseHeadRequest`, HTTP-only, validated)
+- [x] SSL certificate expiry capture (`SslDaysRemaining` on every HTTPS check)
 
 ### Worker updates
 - [x] Protocol-aware executor (`IMonitorProbe` per protocol)
-- [x] Timeout per monitor (per protocol type falls out of the same setting)
+- [x] Timeout per monitor (shared HttpClient enforces per-check deadlines)
 
 ### UI
-- [x] Protocol selection dropdown + protocol badge in monitor list
+- [x] Protocol selection dropdown (+ HEAD toggle for HTTP)
+- [x] Display protocol badge in monitor list
+- [x] Certificate days-remaining column in check history
 
 ---
 
@@ -161,7 +176,7 @@ Goal: handle large load.
 
 Goal: more notification options.
 
-- [ ] Telegram, Slack, Discord webhooks; SMS (Twilio / Africa's Talking)
+- [ ] Slack, Discord webhooks; SMS (Twilio / Africa's Talking)
 
 ---
 

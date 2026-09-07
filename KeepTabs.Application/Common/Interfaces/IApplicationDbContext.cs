@@ -13,6 +13,7 @@ public interface IApplicationDbContext
     DbSet<MonitorCheck> MonitorChecks { get; }
     DbSet<AlertRule> AlertRules { get; }
     DbSet<AlertLog> AlertLogs { get; }
+    DbSet<AppSetting> AppSettings { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

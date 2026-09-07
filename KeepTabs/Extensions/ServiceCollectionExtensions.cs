@@ -1,6 +1,4 @@
 using System.Text.Json.Serialization;
-using Hangfire;
-using Hangfire.PostgreSql;
 using KeepTabs.Domain.Common;
 using KeepTabs.Middleware;
 using KeepTabs.Services;
@@ -23,21 +21,9 @@ public static class ServiceCollectionExtensions
             services.AddKeepTabsAuthentication();
             services.AddHttpContextAccessor();
             services.ConfigureCors(configuration);
-            services.ConfigureHangfire();
             services.ConfigureForwardedHeadersOptions();
             services.ConfigureJsonSerialization();
             services.AddScoped<IUser, CurrentUser>();
-        }
-
-        private void ConfigureHangfire()
-        {
-            services.AddHangfireServer(options => { options.ServerName = "KeepTabs Hangfire Server"; });
-            services.AddHangfire((provider, hangfireConfig) =>
-            {
-                var configuration = provider.GetRequiredService<IConfiguration>();
-                hangfireConfig.UsePostgreSqlStorage(options =>
-                    options.UseNpgsqlConnection(configuration.GetConnectionString("keeptabsdb")));
-            });
         }
 
         private void ConfigureForwardedHeadersOptions()

@@ -1,4 +1,5 @@
 using KeepTabs.Application;
+using KeepTabs.Application.Alerts;
 using KeepTabs.Application.Monitoring;
 using KeepTabs.Domain;
 using KeepTabs.Infrastructure;
@@ -43,6 +44,7 @@ public sealed class MonitorCheckRunnerTests(PostgresFixture database)
             var runner = new MonitorCheckRunner(
                 db,
                 [new StubProbe(new MonitorProbeResult(true, 200, 12, null))],
+                NoOpAlertEvaluator.Instance,
                 TimeProvider.System,
                 NullLogger<MonitorCheckRunner>.Instance);
             completed = await runner.RunCheckAsync(monitorId);
@@ -88,6 +90,7 @@ public sealed class MonitorCheckRunnerTests(PostgresFixture database)
             var runner = new MonitorCheckRunner(
                 db,
                 [new DeletingProbe(provider.GetRequiredService<IServiceScopeFactory>(), monitorId)],
+                NoOpAlertEvaluator.Instance,
                 TimeProvider.System,
                 NullLogger<MonitorCheckRunner>.Instance);
             completed = await runner.RunCheckAsync(monitorId);
@@ -123,6 +126,14 @@ public sealed class MonitorCheckRunnerTests(PostgresFixture database)
 
         public Task<MonitorProbeResult> CheckAsync(DomainMonitor monitor, CancellationToken cancellationToken) =>
             Task.FromResult(result);
+    }
+
+    private sealed class NoOpAlertEvaluator : IAlertEvaluator
+    {
+        public static readonly NoOpAlertEvaluator Instance = new();
+
+        public Task EvaluateAsync(DomainMonitor monitor, bool? previousStatusUp, bool currentIsUp, CancellationToken cancellationToken) =>
+            Task.CompletedTask;
     }
 
     private sealed class DeletingProbe(IServiceScopeFactory scopes, Guid monitorId) : IMonitorProbe

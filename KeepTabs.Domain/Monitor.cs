@@ -17,6 +17,7 @@ public class Monitor : BaseAuditableEntity
     public int TimeoutSeconds { get; set; } = 10;
 
     public int? ExpectedStatusCode { get; set; }
+    public bool UseHeadRequest { get; set; }
     public bool IsPaused { get; set; }
 
     public DateTimeOffset? LastCheckedAt { get; set; }
@@ -32,6 +33,7 @@ public class Monitor : BaseAuditableEntity
         int checkIntervalSeconds,
         int timeoutSeconds,
         int? expectedStatusCode,
+        bool useHeadRequest,
         bool? isPaused)
     {
         Name = name;
@@ -40,6 +42,7 @@ public class Monitor : BaseAuditableEntity
         CheckIntervalSeconds = checkIntervalSeconds;
         TimeoutSeconds = timeoutSeconds;
         ExpectedStatusCode = expectedStatusCode;
+        UseHeadRequest = useHeadRequest;
 
         if (isPaused.HasValue)
         {
@@ -52,7 +55,7 @@ public class Monitor : BaseAuditableEntity
         IsPaused = isPaused;
     }
 
-    public MonitorCheck RecordProbeResult(bool isUp, int? statusCode, int responseTimeMs, string? errorMessage, DateTimeOffset checkedAt)
+    public MonitorCheck RecordProbeResult(bool isUp, int? statusCode, int responseTimeMs, string? errorMessage, DateTimeOffset checkedAt, int? sslDaysRemaining = null)
     {
         LastCheckedAt = checkedAt;
         LastStatusUp = isUp;
@@ -65,7 +68,8 @@ public class Monitor : BaseAuditableEntity
             IsUp = isUp,
             StatusCode = statusCode,
             ResponseTimeMs = responseTimeMs,
-            ErrorMessage = errorMessage
+            ErrorMessage = errorMessage,
+            SslDaysRemaining = sslDaysRemaining
         };
 
         Checks.Add(check);

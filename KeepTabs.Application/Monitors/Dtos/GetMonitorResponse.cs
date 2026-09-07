@@ -10,6 +10,7 @@ public sealed record GetMonitorResponse(
     int CheckIntervalSeconds,
     int TimeoutSeconds,
     int? ExpectedStatusCode,
+    bool UseHeadRequest,
     bool IsPaused,
     DateTimeOffset? LastCheckedAt,
     bool? LastStatusUp);

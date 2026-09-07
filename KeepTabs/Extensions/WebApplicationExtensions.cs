@@ -1,5 +1,3 @@
-using Hangfire;
-using Hangfire.Dashboard.BasicAuthorization;
 using KeepTabs.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,41 +7,8 @@ public static class WebApplicationExtensions
 {
     extension(WebApplication app)
     {
-        public void SetupHangfireDashboard()
-        {
-            app.UseHangfireDashboard(options: new DashboardOptions
-            {
-                DashboardTitle = "KeepTabs Hangfire Dashboard",
-                DisplayStorageConnectionString = app.Environment.IsDevelopment(),
-                Authorization = app.Environment.IsDevelopment()
-                    ? []
-                    :
-                    [
-                        new BasicAuthAuthorizationFilter(new BasicAuthAuthorizationFilterOptions
-                        {
-                            RequireSsl = false,
-                            SslRedirect = false,
-                            LoginCaseSensitive = false,
-                            Users =
-                            [
-                                new BasicAuthAuthorizationUser
-                                {
-                                    Login = "keeptabs",
-                                    PasswordClear = "keeptabs"
-                                }
-                            ]
-                        })
-                    ],
-            });
-        }
-
         public void SetupSwaggerDocs()
         {
-            if (!app.Environment.IsDevelopment())
-            {
-                return;
-            }
-
             app.MapOpenApi();
             app.UseSwaggerUi(options => { options.DocumentPath = "/openapi/v1.json"; });
         }

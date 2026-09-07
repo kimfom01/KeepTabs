@@ -12,7 +12,7 @@ public static class UserEndpoints
     {
         var group = app.MapGroup("auth")
             .WithTags("Auth")
-            .RequireAuthorization(Extensions.AuthorizationPolicies.UserAccess);
+            .RequireAuthorization(AuthorizationPolicies.UserAccess);
 
         group.MapPost("/register", Register)
             .AllowAnonymous()

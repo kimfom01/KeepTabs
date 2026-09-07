@@ -24,7 +24,6 @@ app.UseStaticFiles();
 app.UseCors(CorsPolicies.Frontend);
 app.UseAuthentication();
 app.UseAuthorization();
-app.SetupHangfireDashboard();
 app.SetupSwaggerDocs();
 
 await app.ApplyMigrationsAsync();
@@ -36,6 +35,8 @@ apiGroup.MapGet("/", () => TypedResults.Ok("Hello world"))
 
 apiGroup.MapUserEndpoints();
 apiGroup.MapMonitorEndpoints();
+apiGroup.MapAlertEndpoints();
+apiGroup.MapSettingsEndpoints();
 
 // Unknown /api/* routes stay JSON 404s instead of falling through to the SPA.
 apiGroup.Map("{*path}", () => TypedResults.NotFound())

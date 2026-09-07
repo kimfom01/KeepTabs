@@ -12,9 +12,6 @@
 
     <ItemGroup>
         <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.5.3" />
-        <PackageReference Include="Hangfire.AspNetCore" Version="1.8.25" />
-        <PackageReference Include="Hangfire.Dashboard.BasicAuthorization" Version="1.0.2" />
-        <PackageReference Include="Hangfire.PostgreSql" Version="1.21.1" />
         <PackageReference Include="MediatR" Version="14.2.0" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.11" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
@@ -26,6 +23,20 @@
         <ProjectReference Include="..\KeepTabs.Application\KeepTabs.Application.csproj" />
         <ProjectReference Include="..\KeepTabs.Infrastructure\KeepTabs.Infrastructure.csproj" />
         <ProjectReference Include="..\ServiceDefaults\ServiceDefaults.csproj" />
+    </ItemGroup>
+
+    <!-- Builds the React SPA into wwwroot on developer builds so `dotnet run`
+         serves UI and API together. Production images build the SPA in the
+         Dockerfile frontend stage instead. Opt out with /p:BuildFrontend=false. -->
+    <Target Name="BuildFrontend" BeforeTargets="Build" Condition="'$(Configuration)' == 'Debug' AND '$(BuildFrontend)' != 'false'">
+        <Exec Command="pnpm install --frozen-lockfile" WorkingDirectory="../front-src" Condition="!Exists('../front-src/node_modules')" />
+        <Exec Command="pnpm build" WorkingDirectory="../front-src" />
+    </Target>
+
+    <!-- wwwroot is git-ignored build output: make sure it reaches the output
+         directory (and publish) whenever it exists on disk. -->
+    <ItemGroup>
+        <Content Update="wwwroot\**" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
 </Project>

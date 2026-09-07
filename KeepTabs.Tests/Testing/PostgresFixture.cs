@@ -15,8 +15,7 @@ public sealed class DatabaseCollection : ICollectionFixture<PostgresFixture>
 /// </summary>
 public sealed class PostgresFixture : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder()
-        .WithImage("postgres:17-alpine")
+    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:17-alpine")
         .WithDatabase("keeptabs_tests")
         .WithUsername("postgres")
         .WithPassword("postgres")
