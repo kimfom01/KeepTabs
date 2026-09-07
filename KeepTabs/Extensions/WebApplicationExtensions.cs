@@ -9,11 +9,6 @@ public static class WebApplicationExtensions
     {
         public void SetupSwaggerDocs()
         {
-            if (!app.Environment.IsDevelopment())
-            {
-                return;
-            }
-
             app.MapOpenApi();
             app.UseSwaggerUi(options => { options.DocumentPath = "/openapi/v1.json"; });
         }
