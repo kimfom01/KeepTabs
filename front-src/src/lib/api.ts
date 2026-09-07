@@ -62,6 +62,14 @@ export interface MonitorCheck {
   sslDaysRemaining: number | null;
 }
 
+export interface DailyUptime {
+  date: string;
+  totalChecks: number;
+  upCount: number;
+  uptimePercentage: number;
+  averageResponseTimeMs: number;
+}
+
 export interface AuthResponse {
   token: string;
   userId: string;
@@ -245,6 +253,81 @@ export const settingsApi = {
     request<TelegramSettings>("/settings/telegram", { method: "PUT", body: payload }),
 };
 
+export interface StatusPageMonitorRef {
+  monitorId: string;
+  monitorName: string;
+}
+
+export interface StatusPage {
+  statusPageId: string;
+  name: string;
+  slug: string;
+  isPublic: boolean;
+  monitors: StatusPageMonitorRef[];
+}
+
+export interface CreateStatusPageRequest {
+  name: string;
+  slug: string;
+  isPublic: boolean;
+  monitorIds: string[];
+}
+
+export interface UpdateStatusPageRequest {
+  name?: string | null;
+  slug?: string | null;
+  isPublic?: boolean | null;
+  monitorIds?: string[] | null;
+}
+
+export interface SlugAvailability {
+  slug: string;
+  available: boolean;
+  suggestion: string;
+}
+
+export interface PublicStatusMonitor {
+  monitorId: string;
+  name: string;
+  url: string;
+  protocol: ProtocolType;
+  lastStatusUp: boolean | null;
+  lastCheckedAt: string | null;
+  uptimePercentage: number | null;
+  hourly: HourlyUptime[];
+  daily: DailyUptime[];
+}
+
+export interface HourlyUptime {
+  hour: string;
+  totalChecks: number;
+  upCount: number;
+  uptimePercentage: number;
+  averageResponseTimeMs: number;
+}
+
+export interface PublicStatusPage {
+  name: string;
+  slug: string;
+  monitors: PublicStatusMonitor[];
+}
+
+export const statusPagesApi = {
+  list: () => request<StatusPage[]>("/status-pages"),
+  get: (statusPageId: string) => request<StatusPage>(`/status-pages/${statusPageId}`),
+  create: (payload: CreateStatusPageRequest) =>
+    request<StatusPage>("/status-pages", { method: "POST", body: payload }),
+  update: (statusPageId: string, payload: UpdateStatusPageRequest) =>
+    request<StatusPage>(`/status-pages/${statusPageId}`, { method: "PUT", body: payload }),
+  remove: (statusPageId: string) =>
+    request<void>(`/status-pages/${statusPageId}`, { method: "DELETE" }),
+  public: (slug: string) => request<PublicStatusPage>(`/status/${slug}`),
+  checkSlug: (slug: string, name?: string, excludeId?: string) =>
+    request<SlugAvailability>(
+      `/status-pages/check-slug?slug=${encodeURIComponent(slug)}${name ? `&name=${encodeURIComponent(name)}` : ""}${excludeId ? `&excludeId=${excludeId}` : ""}`,
+    ),
+};
+
 export const authApi = {
   login: (email: string, password: string) =>
     request<AuthResponse>("/auth/login", { method: "POST", body: { email, password } }),
@@ -285,4 +368,6 @@ export const monitorsApi = {
   summary: (monitorId: string) => request<MonitorSummary>(`/monitors/${monitorId}/summary`),
   history: (monitorId: string, days = 7) =>
     request<MonitorCheck[]>(`/monitors/${monitorId}/history?days=${days}`),
+  daily: (monitorId: string, days = 30) =>
+    request<DailyUptime[]>(`/monitors/${monitorId}/daily?days=${days}`),
 };

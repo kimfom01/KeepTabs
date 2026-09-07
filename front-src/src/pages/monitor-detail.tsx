@@ -14,6 +14,7 @@ import { AlertRuleDialog } from "@/components/alert-rule-dialog";
 import { AppHeader } from "@/components/app-header";
 import { MonitorFormDialog } from "@/components/monitor-form-dialog";
 import { ResponseChart } from "@/components/response-chart";
+import { UptimeBars } from "@/components/uptime-bars";
 import { StatusLabel, monitorState } from "@/components/status-dot";
 import {
   AlertDialog,
@@ -51,6 +52,7 @@ import { ApiError, alertsApi, monitorsApi } from "@/lib/api";
 import type {
   AlertLog,
   AlertRule,
+  DailyUptime,
   Monitor,
   MonitorCheck,
   MonitorSummary,
@@ -63,6 +65,7 @@ export function MonitorDetailPage() {
   const [monitor, setMonitor] = useState<Monitor | null>(null);
   const [summary, setSummary] = useState<MonitorSummary | null>(null);
   const [history, setHistory] = useState<MonitorCheck[] | null>(null);
+  const [daily, setDaily] = useState<DailyUptime[] | null>(null);
   const [rules, setRules] = useState<AlertRule[] | null>(null);
   const [lastDelivery, setLastDelivery] = useState<AlertLog | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -92,6 +95,14 @@ export function MonitorDetailPage() {
       setHistory(loadedHistory);
       setRules(loadedRules);
       setLastDelivery(loadedLogs[0] ?? null);
+      try {
+        setDaily(await monitorsApi.daily(monitorId, 30));
+      } catch (error) {
+        // Older API without the daily endpoint: bars stay empty, page still works.
+        if (!(error instanceof ApiError && error.status === 404)) {
+          throw error;
+        }
+      }
     } catch (error) {
       if (error instanceof ApiError && error.status === 404) {
         setNotFound(true);
@@ -325,6 +336,10 @@ export function MonitorDetailPage() {
                   <p className="text-2xl font-semibold">{formatRelative(monitor.lastCheckedAt)}</p>
                 </CardContent>
               </Card>
+            </div>
+
+            <div className="mt-6">
+              <UptimeBars days={daily} loading={daily === null} />
             </div>
 
             <Card className="mt-6">
