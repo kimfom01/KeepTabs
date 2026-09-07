@@ -18,10 +18,11 @@ expiry from a built-in dashboard.
   intervals, timeouts, expected status codes, and pause/resume
 - **Checks** — background worker records every result: status, response time,
   and TLS certificate days-remaining for HTTPS targets
-- **Alerts** — email and webhook rules on down / recovery / consecutive failures,
-  with cooldowns, a delivery log, and a send-test action
-- **Dashboard** — status overview, response-time charts, filterable check history,
-  API-key management, SMTP settings UI
+- **Alerts** — email, webhook, and Telegram rules on down / recovery /
+  consecutive failures, with cooldowns, a delivery log, and a send-test action
+- **Dashboard** — status overview, response-time charts, filterable check
+  history, API-key management, SMTP/Telegram settings UI, dark mode,
+  fully responsive down to phones
 - **Auth** — ASP.NET Identity with JWT sessions plus per-user API keys
   (`X-Api-Key` header); RFC 7807 errors and endpoint validation throughout
 
@@ -39,7 +40,7 @@ expiry from a built-in dashboard.
 
 ## Quickstart (Docker Compose)
 
-Create a `.env` file next to `docker-compose.yaml`:
+Create a `.env` file next to `docker-compose.yaml` (copy `.env.example` to get started):
 
 ```bash
 POSTGRES_PASSWORD=replace-with-a-strong-password
@@ -93,8 +94,16 @@ pnpm --dir front-src dev
 ```
 
 For an integrated build, the API project builds the SPA into `KeepTabs/wwwroot`
-automatically on `dotnet build`/`dotnet run` (skip with `/p:BuildFrontend=false`).
-Client-side routes fall back to `index.html`; unknown `/api/*` routes stay JSON 404s.
+automatically on Debug `dotnet build`/`dotnet run` (skip with
+`/p:BuildFrontend=false`; Release/Docker images build it in the Dockerfile
+frontend stage instead). Client-side routes fall back to `index.html`; unknown
+`/api/*` routes stay JSON 404s.
+
+The UI opens with a public landing page at `/`; the app lives under
+`/dashboard`, with `/alerts`, `/api-keys`, `/settings`, and integration
+`/docs` (webhook + API-key guides, links to Swagger UI, served at `/swagger`
+in every environment). The interface is responsive down to phones and ships
+light/dark themes with OS-preference detection.
 
 ### Tests
 
@@ -115,7 +124,7 @@ offline.
 | `ConnectionStrings__keeptabsdb` | dev-direct | Aspire/compose provides it | Postgres connection |
 | `Jwt__Key` | yes | — | HMAC signing key, **≥ 32 chars** (user secrets / `.env`) |
 | `Jwt__Issuer` / `Jwt__Audience` | yes | — | Token issuer/audience |
-| `Jwt__ExpiryMinutes` | no | `60` | Session lifetime (5–1440) |
+| `Jwt__ExpiryMinutes` | compose default `60` | Session lifetime (5–1440; required when running the image directly) |
 | `Cors__AllowedOrigins` | no | `http://localhost:5173` | Comma-separated browser origins |
 | `ASPNETCORE_ENVIRONMENT` | no | `Production` | `Development` enables Swagger UI |
 

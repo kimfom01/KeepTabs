@@ -9,6 +9,13 @@
       - keeptabs-postgres-data:/var/lib/postgresql/data
     networks:
       - keeptabs-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keeptabs -d keeptabs"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
 
   rabbitmq:
     image: rabbitmq:4-management-alpine
@@ -22,6 +29,13 @@
       - keeptabs-rabbitmq-data:/var/lib/rabbitmq
     networks:
       - keeptabs-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   keeptabs:
     image: keeptabs
@@ -29,8 +43,10 @@
       context: .
       dockerfile: Dockerfile
     depends_on:
-      - postgres
-      - rabbitmq
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__keeptabsdb: Host=postgres;Port=5432;Database=keeptabs;Username=keeptabs;Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your .env file}
@@ -42,6 +58,7 @@
       - keeptabs-network
     ports:
       - "8080:8080"
+    restart: unless-stopped
 
   keeptabs.worker:
     image: keeptabs.worker
@@ -49,14 +66,18 @@
       context: .
       dockerfile: Dockerfile.Worker
     depends_on:
-      - postgres
-      - rabbitmq
-      - keeptabs
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      keeptabs:
+        condition: service_started
     environment:
       DOTNET_ENVIRONMENT: Production
       ConnectionStrings__keeptabsdb: Host=postgres;Port=5432;Database=keeptabs;Username=keeptabs;Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your .env file}
     networks:
       - keeptabs-network
+    restart: unless-stopped
 
 networks:
   keeptabs-network:

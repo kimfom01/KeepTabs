@@ -48,9 +48,14 @@ Goal: basic uptime monitoring via HTTP + core UI + worker.
 - [x] Dashboard (monitor list, status, protocol badges)
 - [x] Create/edit monitor dialog, monitor detail view, API-keys page
 - [x] History chart (response-time area chart on the detail view, plus history table)
+- [x] Public landing page (`/`), app under `/dashboard`
+- [x] Light/dark themes with OS-preference detection
+- [x] Responsive layouts down to phones
+- [x] Integration docs page (webhooks, API keys, Swagger links)
 
 ### DevOps ✅
 - [x] `docker-compose.yaml` (postgres, rabbitmq, api, worker) + `.env` secrets
+- [x] Healthchecks, healthy-dependency ordering, restart policies, `.env.example`
 - [x] API `Dockerfile` (incl. node stage building the SPA) + `Dockerfile.Worker`
 - [x] Environment documentation in README (user secrets for local dev)
 - [x] `KeepTabs.http` request collection
