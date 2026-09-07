@@ -138,7 +138,7 @@ public sealed class StatusPageService : IStatusPageService
         }
 
         page.Name = effective.Name;
-        page.Slug = effective.Slug;
+        page.Slug = effective.Slug ?? page.Slug;
         page.IsPublic = effective.IsPublic;
 
         if (monitors is not null)
