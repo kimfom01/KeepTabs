@@ -1,4 +1,5 @@
 ﻿services:
+
   postgres:
     image: postgres:17-alpine
     environment:
@@ -11,7 +12,9 @@
       - keeptabs-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U keeptabs -d keeptabs"]
+      test:
+        - CMD-SHELL
+        - pg_isready -U keeptabs -d keeptabs
       interval: 5s
       timeout: 3s
       retries: 10
@@ -22,61 +25,57 @@
     environment:
       RABBITMQ_DEFAULT_USER: keeptabs
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?Set RABBITMQ_DEFAULT_PASS in your .env file}
-    ports:
-      - "5672:5672"
-      - "15672:15672"
     volumes:
       - keeptabs-rabbitmq-data:/var/lib/rabbitmq
     networks:
       - keeptabs-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      test:
+        - CMD-SHELL
+        - rabbitmq-diagnostics -q ping
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 20s
 
   keeptabs:
-    image: keeptabs
     build:
       context: .
       dockerfile: Dockerfile
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__keeptabsdb: Host=postgres;Port=5432;Database=keeptabs;Username=keeptabs;Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your .env file}
       Jwt__Key: ${JWT_KEY:?Set JWT_KEY to at least 32 characters in your .env file}
       Jwt__Issuer: ${JWT_ISSUER:-KeepTabs}
       Jwt__Audience: ${JWT_AUDIENCE:-KeepTabs}
       Jwt__ExpiryMinutes: ${JWT_EXPIRY_MINUTES:-60}
+    expose:
+      - "8080"
     networks:
       - keeptabs-network
-    ports:
-      - "8080:8080"
-    restart: unless-stopped
-
-  keeptabs.worker:
-    image: keeptabs.worker
-    build:
-      context: .
-      dockerfile: Dockerfile.Worker
     depends_on:
       postgres:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-      keeptabs:
-        condition: service_started
+    restart: unless-stopped
+
+  keeptabs-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.Worker
     environment:
       DOTNET_ENVIRONMENT: Production
       ConnectionStrings__keeptabsdb: Host=postgres;Port=5432;Database=keeptabs;Username=keeptabs;Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your .env file}
     networks:
       - keeptabs-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
 
 networks:
